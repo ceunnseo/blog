@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -19,14 +20,33 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en">
+    <html lang="ko">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <header className="border-b">
+          <nav className="mx-auto max-w-4xl px-4 py-4">
+            <ul className="flex gap-6">
+              <li>
+                <Link href="/" className="hover:opacity-70 transition-opacity">
+                  HOME
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/articles"
+                  className="hover:opacity-70 transition-opacity"
+                >
+                  아티클
+                </Link>
+              </li>
+            </ul>
+          </nav>
+        </header>
         {children}
       </body>
     </html>
