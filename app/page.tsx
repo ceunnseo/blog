@@ -6,14 +6,25 @@ type PostPage = {
   properties: Record<string, any>;
 };
 
+//Notion post의 title 추출하기
 function getTitle(p: any) {
   // Notion 'Title' 속성 예시
-  const t = p?.["이름"]?.title?.[0]?.plain_text ?? "(untitled!)";
+  const t = p?.["이름"]?.title?.[0]?.plain_text ?? "(untitled)";
   return t;
 }
 
-function getDate(p: any) {
-  return p?.Date?.date?.start ?? null;
+//Notion post의 date 추출하기
+// Notion post의 date 추출하기
+function getDate(p) {
+  const d = p?.["날짜"]?.date?.start;
+  if (!d) return "알 수 없음";
+
+  const date = new Date(d);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1; // JS는 0부터 시작
+  const day = date.getDate();
+
+  return `${year}.${month}.${day}`;
 }
 
 export default async function Home() {
