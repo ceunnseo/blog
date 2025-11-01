@@ -8,13 +8,11 @@ type PostPage = {
 
 //Notion post의 title 추출하기
 function getTitle(p: any) {
-  // Notion 'Title' 속성 예시
   const t = p?.["이름"]?.title?.[0]?.plain_text ?? "(untitled)";
   return t;
 }
 
 //Notion post의 date 추출하기
-// Notion post의 date 추출하기
 function getDate(p) {
   const d = p?.["날짜"]?.date?.start;
   if (!d) return "알 수 없음";
