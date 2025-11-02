@@ -1,16 +1,39 @@
 import Link from "next/link";
 import { queryNotionDB } from "@/lib/notion";
 
-type PostPage = {
+type TitleRichText = { plain_text: string };
+type TitleProperty = {
   id: string;
-  properties: Record<string, any>;
+  type: "title";
+  title: TitleRichText[];
 };
 
-function getTitle(p: any) {
+type DateValue = {
+  start: string | null;
+  end?: string | null;
+  time_zone?: string | null;
+};
+type DateProperty = {
+  id: string;
+  type: "date";
+  date: DateValue | null;
+};
+
+type Properties = Record<string, unknown> & {
+  이름?: TitleProperty; //'이름' 컬럼 (타이틀)
+  날짜?: DateProperty; //'날짜' 컬럼 (데이트)
+};
+
+type PostPage = {
+  id: string;
+  properties: Properties;
+};
+
+function getTitle(p: Properties): string {
   return p?.["이름"]?.title?.[0]?.plain_text ?? "(untitled)";
 }
 
-function getDate(p: any) {
+function getDate(p: Properties): string {
   const d = p?.["날짜"]?.date?.start;
   if (!d) return "알 수 없음";
 
@@ -18,7 +41,6 @@ function getDate(p: any) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-
   return `${year}.${month}.${day}`;
 }
 

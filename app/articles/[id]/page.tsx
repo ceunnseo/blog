@@ -207,7 +207,7 @@ function renderBlock(block: any) {
       return (
         <div
           key={id}
-          className="flex gap-3 p-4 rounded-xl bg-blue-50 border border-blue-200 my-4"
+          className="flex gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200 my-4"
         >
           <div className="text-xl">{icon}</div>
           <div>{renderRichText(value.rich_text)}</div>
