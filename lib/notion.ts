@@ -20,30 +20,21 @@ export async function queryNotionDB<T = any>(
     "Content-Type": "application/json",
   };
 
-  const results: T[] = [];
-  let start_cursor: string | null | undefined = undefined;
-
-  do {
-    const res = await fetch(
-      `${NOTION_BASE}/data_sources/${process.env.NOTION_DATASOURCE_ID}/query`,
-      {
-        method: "POST",
-        headers,
-      }
-    );
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Notion query failed: ${res.status} ${text}`);
+  const res = await fetch(
+    `${NOTION_BASE}/data_sources/${process.env.NOTION_DATASOURCE_ID}/query`,
+    {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
     }
+  );
 
-    const data = await res.json();
-    console.log("data", data);
-    results.push(...(data.results ?? []));
-    start_cursor = data.has_more ? data.next_cursor : null;
-  } while (start_cursor);
+  if (!res.ok) {
+    throw new Error(`Notion query failed: ${res.status} ${await res.text()}`);
+  }
 
-  return results;
+  const data = await res.json();
+  return data.results ?? [];
 }
 
 // 개별 페이지 정보 가져오기

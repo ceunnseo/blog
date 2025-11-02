@@ -1,3 +1,4 @@
+//root layout : 전역으로 공유되는 UI
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
