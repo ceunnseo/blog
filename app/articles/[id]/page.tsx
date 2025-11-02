@@ -60,7 +60,7 @@ function getDate(properties: NotionProperties): string {
 function renderRichText(
   richTextArray: NotionRichText[] | undefined
 ): React.ReactNode[] {
-  if (!richTextArray || richTextArray.length === 0) return "";
+  if (!richTextArray || richTextArray.length === 0) return [];
 
   return richTextArray.map((rt, idx) => {
     const text = rt.plain_text || "";
