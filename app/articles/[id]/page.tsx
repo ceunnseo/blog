@@ -1,5 +1,4 @@
 //개별 아티클 페이지
-
 import { notFound } from "next/navigation";
 import { getNotionPage, getNotionBlocks } from "@/lib/notion";
 import { CodeBlock } from "@/components/CodeBlock";
@@ -8,14 +7,44 @@ import { Toggle } from "@/components/Toggle";
 import { Todo } from "@/components/Todo";
 
 type PageProps = {
-  params: Promise<{ id: string }>;
+  params: { id: string }; // <- Promise 아님!
 };
 
-function getTitle(properties: any) {
+type NotionDateProperty = { date?: { start?: string | null } };
+type NotionTitleProperty = { title?: Array<{ plain_text?: string }> };
+
+type NotionProperties = Record<string, unknown> & {
+  ["날짜"]?: NotionDateProperty;
+  ["이름"]?: NotionTitleProperty;
+};
+
+type NotionRichText = {
+  plain_text?: string;
+  href?: string | null;
+  annotations?: {
+    bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
+    strikethrough?: boolean;
+    code?: boolean;
+  };
+};
+type NotionFileValue =
+  | { type: "external"; external?: { url?: string | null } }
+  | { type: "file"; file?: { url?: string | null } }
+  | { external?: { url?: string | null }; file?: { url?: string | null } };
+
+type NotionBlockBase = {
+  id: string;
+  type: string;
+  [key: string]: any;
+};
+
+function getTitle(properties: NotionProperties): string {
   return properties?.["이름"]?.title?.[0]?.plain_text ?? "(untitled)";
 }
 
-function getDate(properties: any) {
+function getDate(properties: NotionProperties): string {
   const d = properties?.["날짜"]?.date?.start;
   if (!d) return "알 수 없음";
 
@@ -28,7 +57,9 @@ function getDate(properties: any) {
 }
 
 // Rich Text를 파싱해서 강조/코드/링크 등을 처리
-function renderRichText(richTextArray: any[]) {
+function renderRichText(
+  richTextArray: NotionRichText[] | undefined
+): React.ReactNode[] {
   if (!richTextArray || richTextArray.length === 0) return "";
 
   return richTextArray.map((rt, idx) => {
