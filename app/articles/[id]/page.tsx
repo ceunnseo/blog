@@ -197,7 +197,7 @@ function renderBlock(block: any) {
       return (
         <blockquote
           key={id}
-          className="border-l-4 border-gray-300 pl-4 italic text-gray-700 my-4"
+          className="border-l-4 border-gray-300 pl-4 italic text-gray-700 dark:text-gray-100 my-4"
         >
           {renderRichText(value.rich_text)}
         </blockquote>
@@ -208,10 +208,17 @@ function renderBlock(block: any) {
       return (
         <div
           key={id}
-          className="flex gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200 my-4"
+          className="
+        flex gap-3 p-4 rounded-xl 
+        bg-gray-50 border border-gray-200 
+        dark:bg-gray-800 dark:border-gray-700 
+        my-4
+      "
         >
           <div className="text-xl">{icon}</div>
-          <div>{renderRichText(value.rich_text)}</div>
+          <div className="text-gray-800 dark:text-gray-100">
+            {renderRichText(value.rich_text)}
+          </div>
         </div>
       );
     }
@@ -451,29 +458,30 @@ function renderBlock(block: any) {
 
 export default async function ArticleDetailPage({ params }: PageProps) {
   const { id } = await params;
+  let page: any;
+  let blocks: any[];
 
   try {
-    const page = await getNotionPage(id);
-    const blocks = await getNotionBlocks(id);
-
-    const title = getTitle(page.properties);
-    const date = getDate(page.properties);
-
-    return (
-      <main className="mx-auto max-w-3xl px-6 py-16">
-        <article>
-          <header className="mb-12 pb-8 border-b border-gray-200">
-            <h1 className="text-4xl font-bold mb-3 text-gray-900">{title}</h1>
-            <time className="text-sm text-gray-500 font-mono">{date}</time>
-          </header>
-
-          <div className="prose prose-lg max-w-none">
-            {blocks.map((block: any) => renderBlock(block))}
-          </div>
-        </article>
-      </main>
-    );
+    page = await getNotionPage(id);
+    blocks = await getNotionBlocks(id);
   } catch (error) {
     notFound();
   }
+  const title = getTitle(page.properties);
+  const date = getDate(page.properties);
+
+  return (
+    <main className="mx-auto max-w-3xl px-6 py-16">
+      <article>
+        <header className="mb-12 pb-8 border-b border-gray-200">
+          <h1 className="text-4xl font-bold mb-3 text-gray-900">{title}</h1>
+          <time className="text-sm text-gray-500 font-mono">{date}</time>
+        </header>
+
+        <div className="prose prose-lg max-w-none">
+          {blocks.map((block: any) => renderBlock(block))}
+        </div>
+      </article>
+    </main>
+  );
 }
