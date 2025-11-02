@@ -41,6 +41,18 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  /* lavender 팔레트 추가*/
+  --color-lavender-50: #f9f5ff;
+  --color-lavender-100: #f1e8ff;
+  --color-lavender-200: #e6d5ff;
+  --color-lavender-300: #d2b3ff;
+  --color-lavender-400: #b988fd;
+  --color-lavender-500: #9b54f8;
+  --color-lavender-600: #8432eb;
+  --color-lavender-700: #7021cf;
+  --color-lavender-800: #6020a9;
+  --color-lavender-900: #4f1b88;
+  --color-lavender-950: #330665;
 }
 
 :root {

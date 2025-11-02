@@ -2,7 +2,7 @@
 import { notFound } from "next/navigation";
 import { getNotionPage, getNotionBlocks } from "@/lib/notion";
 import { CodeBlock } from "@/components/CodeBlock";
-import { Toggle } from "@/components/Toggle";
+import { Callout } from "@/components/Callout";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -206,20 +206,9 @@ function renderBlock(block: any) {
     case "callout": {
       const icon = value.icon?.emoji || "💡";
       return (
-        <div
-          key={id}
-          className="
-        flex gap-3 p-4 rounded-xl 
-        bg-gray-50 border border-gray-200 
-        dark:bg-gray-800 dark:border-gray-700 
-        my-4
-      "
-        >
-          <div className="text-xl">{icon}</div>
-          <div className="text-gray-800 dark:text-gray-100">
-            {renderRichText(value.rich_text)}
-          </div>
-        </div>
+        <Callout key={id} id={id} icon={icon}>
+          {renderRichText(value.rich_text)}
+        </Callout>
       );
     }
 
