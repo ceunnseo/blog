@@ -1,4 +1,3 @@
-//전체 아티클 리스트
 import Link from "next/link";
 import { queryNotionDB } from "@/lib/notion";
 
@@ -17,8 +16,8 @@ function getDate(p: any) {
 
   const date = new Date(d);
   const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}.${month}.${day}`;
 }
@@ -30,25 +29,34 @@ export default async function ArticlesPage() {
   });
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-semibold mb-6">전체 아티클</h1>
-      <ul className="space-y-4">
+    <main className="mx-auto max-w-3xl px-6 py-16">
+      <header className="mb-12">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">전체 아티클</h1>
+        <p className="text-gray-600">총 {rows.length}개의 글</p>
+      </header>
+
+      <div className="divide-y divide-gray-200">
         {rows.map((page) => {
           const title = getTitle(page.properties);
           const date = getDate(page.properties);
           return (
-            <li key={page.id}>
-              <Link
-                href={`/articles/${page.id}`}
-                className="block border rounded-lg p-4 hover:shadow-md transition-shadow"
-              >
-                <h2 className="text-lg font-medium mb-1">{title}</h2>
-                <p className="text-sm opacity-70">{date}</p>
-              </Link>
-            </li>
+            <Link
+              key={page.id}
+              href={`/articles/${page.id}`}
+              className="block py-6 hover:bg-gray-50 -mx-6 px-6 transition-colors"
+            >
+              <div className="flex items-baseline justify-between gap-6">
+                <h2 className="text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors flex-1">
+                  {title}
+                </h2>
+                <time className="text-sm text-gray-500 whitespace-nowrap font-mono">
+                  {date}
+                </time>
+              </div>
+            </Link>
           );
         })}
-      </ul>
+      </div>
     </main>
   );
 }
