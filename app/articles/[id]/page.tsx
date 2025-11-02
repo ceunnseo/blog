@@ -5,6 +5,7 @@ import { getNotionPage, getNotionBlocks } from "@/lib/notion";
 import { CodeBlock } from "@/components/CodeBlock";
 import { Callout } from "@/components/Callout";
 import { Toggle } from "@/components/Toggle";
+import { Todo } from "@/components/Todo";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -165,21 +166,9 @@ function renderBlock(block: any) {
     case "to_do": {
       const checked = Boolean(value.checked);
       return (
-        <label
-          key={id}
-          className="flex items-start gap-2 mb-2 cursor-pointer select-none"
-        >
-          <input
-            type="checkbox"
-            defaultChecked={checked}
-            disabled
-            readOnly
-            className="mt-1 h-4 w-4 rounded border-gray-300"
-          />
-          <span className={checked ? "line-through text-gray-500" : ""}>
-            {renderRichText(value.rich_text)}
-          </span>
-        </label>
+        <Todo key={id} id={id} checked={checked}>
+          {renderRichText(value.rich_text)}
+        </Todo>
       );
     }
 
