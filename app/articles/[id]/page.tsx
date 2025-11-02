@@ -1,8 +1,10 @@
 //개별 아티클 페이지
+
 import { notFound } from "next/navigation";
 import { getNotionPage, getNotionBlocks } from "@/lib/notion";
 import { CodeBlock } from "@/components/CodeBlock";
 import { Callout } from "@/components/Callout";
+import { Toggle } from "@/components/Toggle";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -183,14 +185,9 @@ function renderBlock(block: any) {
 
     case "toggle":
       return (
-        <details key={id} className="mb-2 border border-gray-200 rounded-lg">
-          <summary className="cursor-pointer font-medium p-3 hover:bg-gray-50">
-            {renderRichText(value.rich_text)}
-          </summary>
-          <div className="px-3 pb-3 pt-2">
-            {block.children?.map((child: any) => renderBlock(child))}
-          </div>
-        </details>
+        <Toggle key={id} id={id} summary={renderRichText(value.rich_text)}>
+          {block.children?.map((child: any) => renderBlock(child))}
+        </Toggle>
       );
 
     case "quote":
