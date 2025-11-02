@@ -30,6 +30,7 @@ export default async function Home() {
   const databaseId = process.env.NOTION_DATABASE_ID!;
   const rows = await queryNotionDB<PostPage>(databaseId, {
     page_size: 5,
+    sorts: [{ property: "날짜", direction: "descending" }],
   });
   console.log("rows", rows);
 

@@ -25,7 +25,9 @@ function getDate(p: any) {
 
 export default async function ArticlesPage() {
   const databaseId = process.env.NOTION_DATABASE_ID!;
-  const rows = await queryNotionDB<PostPage>(databaseId, {});
+  const rows = await queryNotionDB<PostPage>(databaseId, {
+    sorts: [{ property: "날짜", direction: "descending" }],
+  });
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
