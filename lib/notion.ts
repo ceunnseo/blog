@@ -53,6 +53,7 @@ export async function getNotionPage(pageId: string) {
     const text = await res.text();
     throw new Error(`Failed to fetch page: ${res.status} ${text}`);
   }
+  console.log("getNotionPage", res);
 
   return res.json();
 }
@@ -89,5 +90,16 @@ export async function getNotionBlocks(blockId: string) {
     start_cursor = data.has_more ? data.next_cursor : undefined;
   } while (start_cursor);
 
-  return results;
+  // children이 있는 블록들의 하위 블록도 재귀적으로 가져오기
+  const blocksWithChildren = await Promise.all(
+    results.map(async (block: any) => {
+      if (block.has_children) {
+        const children = await getNotionBlocks(block.id);
+        return { ...block, children };
+      }
+      return block;
+    })
+  );
+
+  return blocksWithChildren;
 }
