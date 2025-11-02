@@ -82,7 +82,15 @@ export async function getNotionPage(pageId: string): Promise<GetPageResponse> {
 function isBlockObjectResponse(
   b: BlockObjectResponse | PartialBlockObjectResponse
 ): b is BlockObjectResponse {
-  return b.type !== "unsupported";
+  // 'object'가 block인지 확인 + 'type' 키가 실제로 존재하는지 확인
+  return (
+    typeof b === "object" &&
+    b !== null &&
+    (b as { object?: string }).object === "block" &&
+    "type" in b &&
+    // 여기서부터는 BlockObjectResponse의 속성으로 안전
+    (b as BlockObjectResponse).type !== "unsupported"
+  );
 }
 
 type ListChildrenPayload = {
