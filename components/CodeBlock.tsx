@@ -1,72 +1,55 @@
 "use client";
+//노션 데이터를 받아 shadcn의 Code Block 컴포넌트로 반환하는 CodeBlock 컴포넌트
+import type { BundledLanguage } from "@/components/ui/shadcn-io/code-block";
+import {
+  CodeBlock as ShadcnCodeBlock,
+  CodeBlockBody,
+  CodeBlockContent,
+  CodeBlockCopyButton,
+  CodeBlockHeader,
+  CodeBlockItem,
+} from "@/components/ui/shadcn-io/code-block";
 
-import { useState } from "react";
-
-export function CodeBlock({
-  code,
-  language,
-  id,
-}: {
+interface CodeBlockProps {
   code: string;
   language: string;
-  id: string;
-}) {
-  const [copied, setCopied] = useState(false);
+  id?: string;
+}
 
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+export function CodeBlock({ code, language, id }: CodeBlockProps) {
+  // 노션의 language를 shadcn CodeBlock의 BundledLanguage 형식으로 변환
+  const normalizedLanguage = (
+    language || "plaintext"
+  ).toLowerCase() as BundledLanguage;
+
+  // shadcn CodeBlock의 data 형식에 맞게 변환
+  const codeData = [
+    {
+      filename: "예시",
+      language: normalizedLanguage,
+      code: code,
+    },
+  ];
 
   return (
-    <div className="relative group my-6">
-      <div className="flex items-center justify-between bg-gray-800 text-gray-300 px-4 py-2 rounded-t-lg text-sm">
-        <span className="font-mono">{language || "plaintext"}</span>
-        <button
-          onClick={handleCopy}
-          className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-gray-700 transition-colors"
-        >
-          {copied ? (
-            <>
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              <span className="text-xs">복사됨!</span>
-            </>
-          ) : (
-            <>
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                />
-              </svg>
-              <span className="text-xs">복사</span>
-            </>
+    <div className="my-6">
+      <ShadcnCodeBlock data={codeData} defaultValue={normalizedLanguage}>
+        <CodeBlockHeader>
+          <div className="flex-1 text-sm font-mono text-gray-300">
+            {language || "plaintext"}
+          </div>
+          <CodeBlockCopyButton />
+        </CodeBlockHeader>
+        <CodeBlockBody>
+          {(item) => (
+            <CodeBlockItem key={item.language} value={item.language}>
+              <CodeBlockContent language={item.language}>
+                {item.code}
+              </CodeBlockContent>
+            </CodeBlockItem>
           )}
-        </button>
-      </div>
-      <pre className="bg-gray-900 text-gray-100 p-4 rounded-b-lg overflow-x-auto text-sm leading-6">
-        <code className="font-mono">{code}</code>
-      </pre>
+        </CodeBlockBody>
+      </ShadcnCodeBlock>
     </div>
   );
 }
