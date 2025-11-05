@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { queryNotionDB } from "@/lib/notion";
-import { getTitle } from "@/lib/notion-utils";
+import { getTitle, getDateISO, toDisplayDate } from "@/lib/notion-utils";
 import type {
   PageObjectResponse,
   PartialPageObjectResponse,
@@ -26,28 +26,6 @@ type DateProperty = {
   date: DateValue | null;
 };
 
-type Properties = Record<string, unknown> & {
-  이름?: TitleProperty; //'이름' 컬럼 (타이틀)
-  날짜?: DateProperty; //'날짜' 컬럼 (데이트)
-};
-
-type PostPage = {
-  id: string;
-  properties: Properties;
-};
-
-function getDate(p: Properties): string {
-  const d = p?.["날짜"]?.date?.start;
-  if (!d) return "알 수 없음";
-
-  const date = new Date(d);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}.${month}.${day}`;
-}
-
-const PROP_TITLE = "이름";
 const PROP_DATE = "날짜";
 const PROP_OPEN_STATE = "공개여부";
 
@@ -76,7 +54,8 @@ export default async function ArticlesPage() {
       <div className="divide-y divide-gray-200">
         {rows.map((page) => {
           const title = getTitle(page.properties);
-          const date = getDate(page.properties);
+          const iso = getDateISO(page.properties);
+          const display = toDisplayDate(iso);
           return (
             <Link
               key={page.id}
@@ -88,7 +67,7 @@ export default async function ArticlesPage() {
                   {title}
                 </h2>
                 <time className="text-sm text-gray-500 whitespace-nowrap font-mono">
-                  {date}
+                  {display}
                 </time>
               </div>
             </Link>

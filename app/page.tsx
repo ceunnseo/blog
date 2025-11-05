@@ -5,39 +5,15 @@ import type {
   PartialPageObjectResponse,
 } from "@notionhq/client";
 import { isFullPage } from "@notionhq/client";
-import { getTitle } from "@/lib/notion-utils";
+import { getTitle, getDateISO, toDisplayDate } from "@/lib/notion-utils";
 import Link from "next/link";
 
 // ISR: 1분
 export const revalidate = 60;
 
-/** Notion properties 타입 (SDK 그대로 재사용) */
-export type NotionProperties = PageObjectResponse["properties"];
-
 const PROP_TITLE = "이름";
 const PROP_DATE = "날짜";
 const PROP_OPEN_STATE = "공개여부";
-
-/** ISO 날짜 추출 (type-safe) */
-export function getDateISO(
-  props: NotionProperties,
-  key = PROP_DATE
-): string | undefined {
-  const prop = props[key];
-  if (!prop || prop.type !== "date") return undefined;
-  return prop.date?.start ?? undefined;
-}
-
-/** YYYY.MM.DD 포맷 */
-function toDisplayDate(iso?: string): string {
-  if (!iso) return "알 수 없음";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "알 수 없음";
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}.${m}.${day}`;
-}
 
 export default async function Home() {
   const databaseId = process.env.NOTION_DATABASE_ID!;
@@ -68,10 +44,10 @@ export default async function Home() {
           수 있는 선한 영향력을 만들어가고자 합니다.
         </p>
         <p className="text-lg opacity-80 leading-relaxed mt-6">
-          생각을 깊게 하는 습관을 기르고 있습니다. 영화를 볼 때에도 '재미있다',
-          '재미없다'의 감상을 넘어 왜 이러한 감각을 느꼈는지, 어떤 부분에서
-          그렇게 생각했는지를 생각해봅니다. 개발 역시 단순히 받아들이지 않고
-          철학을 이해하며 더 깊게 바라보려 노력합니다.
+          생각을 깊게 하는 습관을 기르고 있습니다. 영화를 볼 때에도
+          &#39;재미있다&#39;, &#39;재미없다&#39;의 감상을 넘어 왜 이러한 감각을
+          느꼈는지, 어떤 부분에서 그렇게 생각했는지를 생각해봅니다. 개발 역시
+          단순히 받아들이지 않고 철학을 이해하며 더 깊게 바라보려 노력합니다.
         </p>
         <p className="text-lg opacity-80 leading-relaxed mt-6">
           기술은 문제를 해결하기 위한 수단이지 목적이 되어서는 안 된다는

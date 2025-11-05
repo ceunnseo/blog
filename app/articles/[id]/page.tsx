@@ -5,7 +5,7 @@ import { CodeBlock } from "@/components/CodeBlock";
 import { Callout } from "@/components/Callout";
 import { Toggle } from "@/components/Toggle";
 import { Todo } from "@/components/Todo";
-import { getTitle } from "@/lib/notion-utils";
+import { getTitle, getDateISO } from "@/lib/notion-utils";
 
 type PageProps = {
   params: { id: string };
@@ -471,7 +471,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
     notFound();
   }
   const title = getTitle(page.properties);
-  const date = getDate(page.properties);
+  const date = getDateISO(page.properties);
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
