@@ -115,7 +115,11 @@ export function renderBlock(
 
     case "to_do":
       return (
-        <TodoBlock key={block.id} block={block as ToDoBlockObjectResponse} />
+        <TodoBlock
+          key={block.id}
+          block={block as ToDoBlockObjectResponse}
+          childrenNodes={childrenNodes}
+        />
       );
 
     case "quote":
