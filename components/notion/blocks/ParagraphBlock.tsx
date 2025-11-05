@@ -44,10 +44,10 @@ export function ParagraphBlock({ block, childrenNodes, asListItem }: Props) {
       : block.type === "bulleted_list_item";
     const Wrapper = isUl ? "ul" : "ol";
     return (
-      <li className={isUl ? "ml-6 mb-2 list-disc" : "ml-6 mb-2 list-decimal"}>
+      <li className="ml-0 mb-1">
         {renderRichText(richText)}
         {childrenNodes?.length ? (
-          <Wrapper className="mt-2">{childrenNodes}</Wrapper>
+          <Wrapper className="mt-1">{childrenNodes}</Wrapper>
         ) : null}
       </li>
     );

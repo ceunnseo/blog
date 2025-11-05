@@ -55,7 +55,83 @@ import { TableOfContentsBlock } from "./TableOfContentsBlock";
 function renderChildren(block: BlockWithChildren): React.ReactNode[] {
   if (!("children" in block) || !block.children || block.children.length === 0)
     return [];
-  return block.children.map((child, idx) => renderBlock(child, idx));
+  return renderBlocks(block.children);
+}
+
+// 2) 새로 추가: 연속 리스트 구간을 <ol>/<ul>로 묶는 렌더러
+export function renderBlocks(blocks: BlockWithChildren[]): React.ReactNode[] {
+  const out: React.ReactNode[] = [];
+
+  for (let i = 0; i < blocks.length; ) {
+    const b = blocks[i];
+    if (!isFullBlock(b)) {
+      i++;
+      continue;
+    }
+
+    // numbered_list_item 묶기
+    if (b.type === "numbered_list_item") {
+      const items: BlockWithChildren[] = [];
+      while (
+        i < blocks.length &&
+        isFullBlock(blocks[i]) &&
+        blocks[i].type === "numbered_list_item"
+      ) {
+        items.push(blocks[i] as BlockWithChildren);
+        i++;
+      }
+      out.push(
+        <ol
+          key={`ol-group-${(b as any).id}-${i}`}
+          className="my-4 py-1 ml-2 list-decimal list-inside space-y-1"
+        >
+          {items.map((item) => (
+            <ParagraphBlock
+              key={item.id}
+              block={item as NumberedListItemBlockObjectResponse}
+              asListItem="ol"
+              childrenNodes={renderChildren(item)}
+            />
+          ))}
+        </ol>
+      );
+      continue;
+    }
+
+    // bulleted_list_item 묶기
+    if (b.type === "bulleted_list_item") {
+      const items: BlockWithChildren[] = [];
+      while (
+        i < blocks.length &&
+        isFullBlock(blocks[i]) &&
+        blocks[i].type === "bulleted_list_item"
+      ) {
+        items.push(blocks[i] as BlockWithChildren);
+        i++;
+      }
+      out.push(
+        <ul
+          key={`ul-group-${(b as any).id}-${i}`}
+          className="my-4 py-1 ml-2 list-disc list-inside space-y-1"
+        >
+          {items.map((item) => (
+            <ParagraphBlock
+              key={item.id}
+              block={item as BulletedListItemBlockObjectResponse}
+              asListItem="ul"
+              childrenNodes={renderChildren(item)}
+            />
+          ))}
+        </ul>
+      );
+      continue;
+    }
+
+    // 리스트가 아니면 기존 로직으로 단일 블록 렌더
+    out.push(renderBlock(b));
+    i++;
+  }
+  return out;
 }
 
 export function renderBlock(
@@ -96,7 +172,7 @@ export function renderBlock(
         <ParagraphBlock
           key={block.id}
           block={block as BulletedListItemBlockObjectResponse}
-          asListItem="ul" // ← 문자열 상수로 지정
+          asListItem="ul"
           childrenNodes={childrenNodes}
         />
       );
@@ -106,7 +182,7 @@ export function renderBlock(
         <ParagraphBlock
           key={block.id}
           block={block as NumberedListItemBlockObjectResponse}
-          asListItem="ol" // ← 문자열 상수로 지정
+          asListItem="ol"
           childrenNodes={childrenNodes}
         />
       );

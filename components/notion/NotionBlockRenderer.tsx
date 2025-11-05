@@ -1,7 +1,7 @@
 // components/notion/NotionBlockRenderer.tsx
 import React from "react";
 import type { BlockWithChildren } from "@/components/notion/types";
-import { renderBlock } from "./blocks";
+import { renderBlocks } from "./blocks";
 
 export function NotionBlockRenderer({
   blocks,
@@ -9,8 +9,6 @@ export function NotionBlockRenderer({
   blocks: BlockWithChildren[];
 }) {
   return (
-    <div className="prose prose-lg max-w-none">
-      {blocks.map((b, i) => renderBlock(b, i))}
-    </div>
+    <div className="prose prose-lg max-w-none">{renderBlocks(blocks)}</div>
   );
 }
