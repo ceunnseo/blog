@@ -6,6 +6,7 @@ import type {
   TableBlockObjectResponse,
   TableRowBlockObjectResponse,
   BlockObjectResponse,
+  BlockWithChildren,
 } from "@/components/notion/types";
 import { renderRichText } from "@/components/notion/utils/rich-text";
 import { isFullBlock } from "@/components/notion/types";
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/table";
 
 type Props = {
-  block: TableBlockObjectResponse;
+  block: TableBlockObjectResponse & { children?: BlockWithChildren[] };
   childrenNodes?: React.ReactNode[]; // table_row가 children으로 들어온 상태
 };
 
