@@ -5,15 +5,8 @@ import { CodeBlock } from "@/components/CodeBlock";
 import { Callout } from "@/components/Callout";
 import { Toggle } from "@/components/Toggle";
 import { Todo } from "@/components/Todo";
+import { NotionTable } from "@/components/NotionTable";
 import { getTitle, getDateISO } from "@/lib/notion-utils";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 type PageProps = {
   params: { id: string };
@@ -375,57 +368,13 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     }
 
     case "table": {
-      // 테이블의 자식 블록들(table_row)을 수집
-      const tableRows = block.children || [];
-      const hasColumnHeader = value?.has_column_header || false;
-      const hasRowHeader = value?.has_row_header || false;
-
-      if (tableRows.length === 0) return null;
-
       return (
-        <div key={id} className="my-6">
-          <Table>
-            {hasColumnHeader && tableRows.length > 0 && (
-              <TableHeader>
-                <TableRow>
-                  {tableRows[0].table_row?.cells?.map(
-                    (cell: any[], cellIdx: number) => (
-                      <TableHead key={cellIdx}>
-                        {renderRichText(cell)}
-                      </TableHead>
-                    )
-                  )}
-                </TableRow>
-              </TableHeader>
-            )}
-            <TableBody>
-              {tableRows
-                .slice(hasColumnHeader ? 1 : 0)
-                .map((row: any, rowIdx: number) => {
-                  const cells = row.table_row?.cells || [];
-                  return (
-                    <TableRow key={row.id || rowIdx}>
-                      {cells.map((cell: any[], cellIdx: number) => {
-                        // 첫 번째 열이 행 헤더인 경우
-                        if (hasRowHeader && cellIdx === 0) {
-                          return (
-                            <TableHead key={cellIdx}>
-                              {renderRichText(cell)}
-                            </TableHead>
-                          );
-                        }
-                        return (
-                          <TableCell key={cellIdx}>
-                            {renderRichText(cell)}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  );
-                })}
-            </TableBody>
-          </Table>
-        </div>
+        <NotionTable
+          key={id}
+          id={id}
+          block={block}
+          renderRichText={renderRichText}
+        />
       );
     }
 
