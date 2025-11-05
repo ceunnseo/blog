@@ -13,6 +13,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  getPlainText,
+  renderRichText,
+} from "@/components/notion/utils/rich-text";
 
 import type {
   BlockObjectResponse,
@@ -47,6 +51,13 @@ import type {
   ColumnBlockObjectResponse,
   TableOfContentsBlockObjectResponse,
 } from "@notionhq/client/build/src/api-endpoints";
+import {
+  PageProps,
+  BlockWithChildren,
+  isFullBlock,
+  assertNever,
+  NotionFileLike,
+} from "@/components/notion/types";
 import React from "react";
 
 // --- Types -----------------------------------------------------------------
@@ -54,17 +65,17 @@ import React from "react";
 /**
  * Our blocks come pre-expanded with optional children from getNotionBlocks().
  */
-export type BlockWithChildren =
+/*export type BlockWithChildren =
   | (BlockObjectResponse & { children?: BlockWithChildren[] })
-  | (PartialBlockObjectResponse & { children?: BlockWithChildren[] });
+  | (PartialBlockObjectResponse & { children?: BlockWithChildren[] });*/
 
-export type PageProps = {
+/*export type PageProps = {
   params: { id: string };
-};
+};*/
 
 // --- Rich text helpers ------------------------------------------------------
 
-function renderRichText(
+/*function renderRichText(
   richTextArray?: RichTextItemResponse[]
 ): React.ReactNode {
   if (!richTextArray || richTextArray.length === 0) return null;
@@ -134,24 +145,16 @@ function renderRichText(
       })}
     </>
   );
-}
+}*/
 
-function getPlainText(richTextArray?: RichTextItemResponse[]): string {
+/*function getPlainText(richTextArray?: RichTextItemResponse[]): string {
   if (!richTextArray) return "";
   return richTextArray.map((rt) => rt.plain_text ?? "").join("");
-}
+}*/
 
 // --- URL helpers for Notion file-like objects ------------------------------
 
-function extractFileUrl(
-  file:
-    | ImageBlockObjectResponse["image"]
-    | VideoBlockObjectResponse["video"]
-    | AudioBlockObjectResponse["audio"]
-    | PdfBlockObjectResponse["pdf"]
-    | FileBlockObjectResponse["file"]
-    | undefined
-): string {
+function extractFileUrl(file: NotionFileLike): string {
   if (!file) return "";
   if (file.type === "external") return file.external?.url ?? "";
   if (file.type === "file") return file.file?.url ?? ""; // may be temporary
@@ -164,25 +167,6 @@ function renderChildren(block: BlockWithChildren): React.ReactNode[] {
   if (!("children" in block) || !block.children || block.children.length === 0)
     return [];
   return block.children.map((child, idx) => renderBlock(child, idx));
-}
-
-// --- Type guards ------------------------------------------------------------
-
-const isFullBlock = (
-  b: BlockWithChildren
-): b is BlockObjectResponse & { children?: BlockWithChildren[] } => {
-  // full blocks have stable properties like object, has_children, archived
-  return (
-    (b as BlockObjectResponse).object === "block" &&
-    "id" in b &&
-    "type" in b &&
-    "has_children" in (b as BlockObjectResponse) &&
-    "archived" in (b as BlockObjectResponse)
-  );
-};
-
-function assertNever(x: never): never {
-  throw new Error(`Unhandled case: ${JSON.stringify(x)}`);
 }
 
 // A best-effort heuristic: consider a table row "colored" when any cell has a background color.
@@ -526,8 +510,6 @@ function renderBlock(block: BlockWithChildren, index: number): React.ReactNode {
       );
 
       if (rows.length === 0) return null;
-
-      const columnCount = rows[0].table_row.cells.length;
 
       // Heuristic: treat the first consecutive colored rows at the top as header rows if table.has_column_header is false.
       let headerRowCount = 0;
