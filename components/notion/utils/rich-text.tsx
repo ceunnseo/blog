@@ -1,4 +1,5 @@
 import type { RichTextItemResponse } from "@notionhq/client";
+import { NOTION_COLOR_CLASS_MAP } from "@/components/notion/utils/color-map";
 
 //순수 문자열만 추출하는 getPlainText 함수
 export const getPlainText = (
@@ -19,6 +20,8 @@ export const renderRichText = (
       {richTextArray.map((rt, idx) => {
         const text = rt.plain_text ?? "";
         const { annotations, href } = rt;
+        const colorKey = annotations?.color ?? "default";
+        const colorClass = NOTION_COLOR_CLASS_MAP[colorKey] ?? "";
 
         let element: React.ReactNode = text;
 
@@ -74,8 +77,17 @@ export const renderRichText = (
             </u>
           );
         }
+        const isBackground = colorKey.endsWith("_background");
+        const bgPadding = isBackground ? "px-1 rounded" : "";
         //글자
-        return <span key={rt.plain_text + idx}>{element}</span>;
+        return (
+          <span
+            key={rt.plain_text + idx}
+            className={`${colorClass} ${bgPadding}`}
+          >
+            {element}
+          </span>
+        );
       })}
     </>
   );

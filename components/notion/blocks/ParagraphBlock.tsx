@@ -29,6 +29,7 @@ export function ParagraphBlock({ block, childrenNodes, asListItem }: Props) {
       : block.type === "bulleted_list_item"
       ? block.bulleted_list_item.rich_text
       : block.numbered_list_item.rich_text;
+  console.log("block", block);
 
   // 리스트로 렌더해야 하는가?
   const isList =
