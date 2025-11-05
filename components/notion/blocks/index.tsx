@@ -58,37 +58,53 @@ function renderChildren(block: BlockWithChildren): React.ReactNode[] {
   return renderBlocks(block.children);
 }
 
-// 2) 새로 추가: 연속 리스트 구간을 <ol>/<ul>로 묶는 렌더러
+// 연속 리스트 구간을 <ol>/<ul>로 묶는 렌더러
 export function renderBlocks(blocks: BlockWithChildren[]): React.ReactNode[] {
   const out: React.ReactNode[] = [];
 
+  // 리스트 전용 타입 가드
+  const isNumberedListItem = (
+    b: BlockWithChildren
+  ): b is NumberedListItemBlockObjectResponse & {
+    children?: BlockWithChildren[];
+  } => isFullBlock(b) && b.type === "numbered_list_item";
+
+  const isBulletedListItem = (
+    b: BlockWithChildren
+  ): b is BulletedListItemBlockObjectResponse & {
+    children?: BlockWithChildren[];
+  } => isFullBlock(b) && b.type === "bulleted_list_item";
+
   for (let i = 0; i < blocks.length; ) {
     const b = blocks[i];
+
     if (!isFullBlock(b)) {
       i++;
       continue;
     }
 
     // numbered_list_item 묶기
-    if (b.type === "numbered_list_item") {
-      const items: BlockWithChildren[] = [];
-      while (
-        i < blocks.length &&
-        isFullBlock(blocks[i]) &&
-        blocks[i].type === "numbered_list_item"
-      ) {
-        items.push(blocks[i] as BlockWithChildren);
+    if (isNumberedListItem(b)) {
+      const items: (NumberedListItemBlockObjectResponse & {
+        children?: BlockWithChildren[];
+      })[] = [];
+
+      while (i < blocks.length) {
+        const cur = blocks[i]; // 인덱싱 결과를 변수에 저장해 좁힘 유지
+        if (!isNumberedListItem(cur)) break;
+        items.push(cur);
         i++;
       }
+
       out.push(
         <ol
-          key={`ol-group-${(b as any).id}-${i}`}
+          key={`ol-group-${items[0]?.id}-${items.length}`}
           className="my-4 py-1 ml-2 list-decimal list-inside space-y-1"
         >
           {items.map((item) => (
             <ParagraphBlock
               key={item.id}
-              block={item as NumberedListItemBlockObjectResponse}
+              block={item}
               asListItem="ol"
               childrenNodes={renderChildren(item)}
             />
@@ -99,25 +115,27 @@ export function renderBlocks(blocks: BlockWithChildren[]): React.ReactNode[] {
     }
 
     // bulleted_list_item 묶기
-    if (b.type === "bulleted_list_item") {
-      const items: BlockWithChildren[] = [];
-      while (
-        i < blocks.length &&
-        isFullBlock(blocks[i]) &&
-        blocks[i].type === "bulleted_list_item"
-      ) {
-        items.push(blocks[i] as BlockWithChildren);
+    if (isBulletedListItem(b)) {
+      const items: (BulletedListItemBlockObjectResponse & {
+        children?: BlockWithChildren[];
+      })[] = [];
+
+      while (i < blocks.length) {
+        const cur = blocks[i];
+        if (!isBulletedListItem(cur)) break;
+        items.push(cur);
         i++;
       }
+
       out.push(
         <ul
-          key={`ul-group-${(b as any).id}-${i}`}
+          key={`ul-group-${items[0]?.id}-${items.length}`}
           className="my-4 py-1 ml-2 list-disc list-inside space-y-1"
         >
           {items.map((item) => (
             <ParagraphBlock
               key={item.id}
-              block={item as BulletedListItemBlockObjectResponse}
+              block={item}
               asListItem="ul"
               childrenNodes={renderChildren(item)}
             />
@@ -131,6 +149,7 @@ export function renderBlocks(blocks: BlockWithChildren[]): React.ReactNode[] {
     out.push(renderBlock(b));
     i++;
   }
+
   return out;
 }
 
