@@ -8,24 +8,6 @@ import type {
 import { isFullPage } from "@notionhq/client";
 export const revalidate = 60;
 
-type TitleRichText = { plain_text: string };
-type TitleProperty = {
-  id: string;
-  type: "title";
-  title: TitleRichText[];
-};
-
-type DateValue = {
-  start: string | null;
-  end?: string | null;
-  time_zone?: string | null;
-};
-type DateProperty = {
-  id: string;
-  type: "date";
-  date: DateValue | null;
-};
-
 const PROP_DATE = "날짜";
 const PROP_OPEN_STATE = "공개여부";
 

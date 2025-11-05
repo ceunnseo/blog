@@ -76,8 +76,6 @@ export async function getNotionPage(pageId: string): Promise<GetPageResponse> {
   return data;
 }
 
-// --- 블록 children 목록 타입 가드 & 헬퍼 ---
-
 // PartialBlockObjectResponse(unsupported) 제외하고 BlockObjectResponse로 좁히기
 function isBlockObjectResponse(
   b: BlockObjectResponse | PartialBlockObjectResponse

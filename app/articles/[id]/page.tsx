@@ -1,4 +1,4 @@
-//개별 아티클 페이지
+//개별 아티클 페이지//개별 아티클 페이지
 import { notFound } from "next/navigation";
 import { getNotionPage, getNotionBlocks } from "@/lib/notion";
 import { CodeBlock } from "@/components/CodeBlock";
@@ -6,17 +6,17 @@ import { Callout } from "@/components/Callout";
 import { Toggle } from "@/components/Toggle";
 import { Todo } from "@/components/Todo";
 import { getTitle, getDateISO } from "@/lib/notion-utils";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type PageProps = {
   params: { id: string };
-};
-
-type NotionDateProperty = { date?: { start?: string | null } };
-type NotionTitleProperty = { title?: Array<{ plain_text?: string }> };
-
-type NotionProperties = Record<string, unknown> & {
-  ["날짜"]?: NotionDateProperty;
-  ["이름"]?: NotionTitleProperty;
 };
 
 type NotionRichText = {
@@ -30,28 +30,6 @@ type NotionRichText = {
     code?: boolean;
   };
 };
-type NotionFileValue =
-  | { type: "external"; external?: { url?: string | null } }
-  | { type: "file"; file?: { url?: string | null } }
-  | { external?: { url?: string | null }; file?: { url?: string | null } };
-
-type NotionBlockBase = {
-  id: string;
-  type: string;
-  [key: string]: any;
-};
-
-function getDate(properties: NotionProperties): string {
-  const d = properties?.["날짜"]?.date?.start;
-  if (!d) return "알 수 없음";
-
-  const date = new Date(d);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}.${month}.${day}`;
-}
 
 // Rich Text를 파싱해서 강조/코드/링크 등을 처리
 function renderRichText(
@@ -144,7 +122,7 @@ function getFileUrl(value: any): string {
 }
 
 // 블록 렌더링 함수
-function renderBlock(block: any) {
+function renderBlock(block: any, index: number, allBlocks: any[]) {
   const { type, id } = block;
   const value = block[type];
 
@@ -203,7 +181,9 @@ function renderBlock(block: any) {
     case "toggle":
       return (
         <Toggle key={id} id={id} summary={renderRichText(value.rich_text)}>
-          {block.children?.map((child: any) => renderBlock(child))}
+          {block.children?.map((child: any, idx: number) =>
+            renderBlock(child, idx, block.children)
+          )}
         </Toggle>
       );
 
@@ -394,30 +374,64 @@ function renderBlock(block: any) {
       );
     }
 
-    case "table":
+    case "table": {
+      // 테이블의 자식 블록들(table_row)을 수집
+      const tableRows = block.children || [];
+      const hasColumnHeader = value?.has_column_header || false;
+      const hasRowHeader = value?.has_row_header || false;
+
+      if (tableRows.length === 0) return null;
+
       return (
-        <div key={id} className="my-4 overflow-x-auto">
-          <table className="w-full border-collapse border border-gray-200 rounded-xl">
-            <tbody />
-          </table>
+        <div key={id} className="my-6">
+          <Table>
+            {hasColumnHeader && tableRows.length > 0 && (
+              <TableHeader>
+                <TableRow>
+                  {tableRows[0].table_row?.cells?.map(
+                    (cell: any[], cellIdx: number) => (
+                      <TableHead key={cellIdx}>
+                        {renderRichText(cell)}
+                      </TableHead>
+                    )
+                  )}
+                </TableRow>
+              </TableHeader>
+            )}
+            <TableBody>
+              {tableRows
+                .slice(hasColumnHeader ? 1 : 0)
+                .map((row: any, rowIdx: number) => {
+                  const cells = row.table_row?.cells || [];
+                  return (
+                    <TableRow key={row.id || rowIdx}>
+                      {cells.map((cell: any[], cellIdx: number) => {
+                        // 첫 번째 열이 행 헤더인 경우
+                        if (hasRowHeader && cellIdx === 0) {
+                          return (
+                            <TableHead key={cellIdx}>
+                              {renderRichText(cell)}
+                            </TableHead>
+                          );
+                        }
+                        return (
+                          <TableCell key={cellIdx}>
+                            {renderRichText(cell)}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  );
+                })}
+            </TableBody>
+          </Table>
         </div>
       );
-
-    case "table_row": {
-      const cells: any[][] = value?.cells || [];
-      return (
-        <tr key={id} className="border-b border-gray-200 last:border-b-0">
-          {cells.map((cell, i) => (
-            <td
-              key={i}
-              className="p-3 border-r border-gray-200 last:border-r-0"
-            >
-              {getPlainText(cell)}
-            </td>
-          ))}
-        </tr>
-      );
     }
+
+    case "table_row":
+      // table_row는 table 블록 내에서 처리되므로 여기서는 null 반환
+      return null;
 
     case "table_of_contents":
       return (
@@ -482,7 +496,9 @@ export default async function ArticleDetailPage({ params }: PageProps) {
         </header>
 
         <div className="prose prose-lg max-w-none">
-          {blocks.map((block: any) => renderBlock(block))}
+          {blocks.map((block: any, index: number) =>
+            renderBlock(block, index, blocks)
+          )}
         </div>
       </article>
     </main>
