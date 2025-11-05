@@ -3,6 +3,8 @@ import React from "react";
 import type {
   BlockWithChildren,
   BlockObjectResponse,
+  BulletedListItemBlockObjectResponse,
+  NumberedListItemBlockObjectResponse,
   ParagraphBlockObjectResponse,
   Heading1BlockObjectResponse,
   Heading2BlockObjectResponse,
@@ -90,16 +92,21 @@ export function renderBlock(
       );
 
     case "bulleted_list_item":
-    case "numbered_list_item":
-      // 리스트 그룹화는 utils/listGrouping에서 처리하고,
-      // 여기서는 각각의 <li>만 렌더하는 컴포넌트를 둬도 됨.
-      // 우선 단순화: ParagraphBlock처럼 렌더하거나, 전용 ListItemBlock을 분리해도 OK.
-      // 필요 시 별도 ListItemBlock.tsx로 분리하세요.
       return (
         <ParagraphBlock
           key={block.id}
-          block={block as ParagraphBlockObjectResponse}
-          asListItem={block.type === "bulleted_list_item" ? "ul" : "ol"}
+          block={block as BulletedListItemBlockObjectResponse}
+          asListItem="ul" // ← 문자열 상수로 지정
+          childrenNodes={childrenNodes}
+        />
+      );
+
+    case "numbered_list_item":
+      return (
+        <ParagraphBlock
+          key={block.id}
+          block={block as NumberedListItemBlockObjectResponse}
+          asListItem="ol" // ← 문자열 상수로 지정
           childrenNodes={childrenNodes}
         />
       );

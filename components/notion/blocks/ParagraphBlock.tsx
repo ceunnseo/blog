@@ -1,3 +1,6 @@
+// components/notion/blocks/ParagraphBlock.tsx
+"use client";
+
 import React from "react";
 import type {
   ParagraphBlockObjectResponse,
@@ -14,24 +17,27 @@ type Paragraphish =
 type Props = {
   block: Paragraphish;
   childrenNodes?: React.ReactNode[];
+  /** 라우터에서 강제 지정 (옵션) */
   asListItem?: "ul" | "ol";
 };
 
 export function ParagraphBlock({ block, childrenNodes, asListItem }: Props) {
-  // 블록 타입별로 rich_text를 안전하게 꺼내기
+  // 타입 안전하게 rich_text 뽑기
   const richText =
     block.type === "paragraph"
       ? block.paragraph.rich_text
       : block.type === "bulleted_list_item"
       ? block.bulleted_list_item.rich_text
-      : block.numbered_list_item.rich_text; // numbered_list_item
+      : block.numbered_list_item.rich_text;
 
-  // 리스트 아이템으로 렌더링
-  if (
-    asListItem ||
+  // 리스트로 렌더해야 하는가?
+  const isList =
+    asListItem !== undefined ||
     block.type === "bulleted_list_item" ||
-    block.type === "numbered_list_item"
-  ) {
+    block.type === "numbered_list_item";
+
+  if (isList) {
+    // 라우터에서 asListItem을 넘기면 그대로 사용하고, 아니면 타입으로 판정
     const isUl = asListItem
       ? asListItem === "ul"
       : block.type === "bulleted_list_item";
@@ -46,7 +52,7 @@ export function ParagraphBlock({ block, childrenNodes, asListItem }: Props) {
     );
   }
 
-  // 일반 문단 렌더링
+  // 일반 문단
   return (
     <div>
       <p className="mb-4 leading-7">{renderRichText(richText)}</p>
