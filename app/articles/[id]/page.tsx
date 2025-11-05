@@ -1,4 +1,3 @@
-//개별 아티클 페이지
 import { notFound } from "next/navigation";
 import { getNotionPage, getNotionBlocks } from "@/lib/notion";
 import { CodeBlock } from "@/components/CodeBlock";
@@ -15,51 +14,83 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-type PageProps = {
+import type {
+  BlockObjectResponse,
+  PageObjectResponse,
+  PartialBlockObjectResponse,
+  RichTextItemResponse,
+  ParagraphBlockObjectResponse,
+  Heading1BlockObjectResponse,
+  Heading2BlockObjectResponse,
+  Heading3BlockObjectResponse,
+  BulletedListItemBlockObjectResponse,
+  NumberedListItemBlockObjectResponse,
+  ToDoBlockObjectResponse,
+  ToggleBlockObjectResponse,
+  QuoteBlockObjectResponse,
+  CalloutBlockObjectResponse,
+  CodeBlockObjectResponse,
+  DividerBlockObjectResponse,
+  ImageBlockObjectResponse,
+  VideoBlockObjectResponse,
+  AudioBlockObjectResponse,
+  PdfBlockObjectResponse,
+  FileBlockObjectResponse,
+  EmbedBlockObjectResponse,
+  LinkPreviewBlockObjectResponse,
+  TableBlockObjectResponse,
+  TableRowBlockObjectResponse,
+  SyncedBlockBlockObjectResponse,
+  ChildPageBlockObjectResponse,
+  ChildDatabaseBlockObjectResponse,
+  ColumnListBlockObjectResponse,
+  ColumnBlockObjectResponse,
+  TableOfContentsBlockObjectResponse,
+} from "@notionhq/client/build/src/api-endpoints";
+import React from "react";
+
+// --- Types -----------------------------------------------------------------
+
+/**
+ * Our blocks come pre-expanded with optional children from getNotionBlocks().
+ */
+export type BlockWithChildren =
+  | (BlockObjectResponse & { children?: BlockWithChildren[] })
+  | (PartialBlockObjectResponse & { children?: BlockWithChildren[] });
+
+export type PageProps = {
   params: { id: string };
 };
 
-type NotionRichText = {
-  plain_text?: string;
-  href?: string | null;
-  annotations?: {
-    bold?: boolean;
-    italic?: boolean;
-    underline?: boolean;
-    strikethrough?: boolean;
-    code?: boolean;
-  };
-};
+// --- Rich text helpers ------------------------------------------------------
 
-// Rich Text를 파싱해서 강조/코드/링크 등을 처리
 function renderRichText(
-  richTextArray: NotionRichText[] | undefined
+  richTextArray?: RichTextItemResponse[]
 ): React.ReactNode {
   if (!richTextArray || richTextArray.length === 0) return null;
 
   return (
     <>
       {richTextArray.map((rt, idx) => {
-        const text = rt.plain_text || "";
-        const annotations = rt.annotations || {};
-        const href = rt.href;
+        const text = rt.plain_text ?? "";
+        const { annotations, href } = rt;
 
-        let element: any = text;
+        let element: React.ReactNode = text;
 
         // 링크
         if (href) {
           element = (
-            <a key={idx} href={href} target="_blank" rel="noreferrer">
+            <a key={`a-${idx}`} href={href} target="_blank" rel="noreferrer">
               {element}
             </a>
           );
         }
 
         // 코드 (인라인)
-        if (annotations.code) {
+        if (annotations?.code) {
           element = (
             <code
-              key={idx}
+              key={`code-${idx}`}
               className="px-1.5 py-0.5 bg-gray-100 text-red-600 rounded text-sm font-mono"
             >
               {element}
@@ -67,79 +98,112 @@ function renderRichText(
           );
         }
 
-        // 볼드
-        if (annotations.bold) {
+        if (annotations?.bold) {
           element = (
-            <strong key={idx} className="font-bold">
+            <strong key={`b-${idx}`} className="font-bold">
               {element}
             </strong>
           );
         }
 
-        // 이탤릭
-        if (annotations.italic) {
+        if (annotations?.italic) {
           element = (
-            <em key={idx} className="italic">
+            <em key={`i-${idx}`} className="italic">
               {element}
             </em>
           );
         }
 
-        // 취소선
-        if (annotations.strikethrough) {
+        if (annotations?.strikethrough) {
           element = (
-            <s key={idx} className="line-through">
+            <s key={`s-${idx}`} className="line-through">
               {element}
             </s>
           );
         }
 
-        // 밑줄
-        if (annotations.underline) {
+        if (annotations?.underline) {
           element = (
-            <u key={idx} className="underline">
+            <u key={`u-${idx}`} className="underline">
               {element}
             </u>
           );
         }
 
-        return <span key={idx}>{element}</span>;
+        return <span key={rt.plain_text + idx}>{element}</span>;
       })}
     </>
   );
 }
 
-// 일반 텍스트만 추출 (fallback용)
-function getPlainText(richTextArray: any[]): string {
+function getPlainText(richTextArray?: RichTextItemResponse[]): string {
   if (!richTextArray) return "";
-  return richTextArray.map((rt) => rt.plain_text || "").join("");
+  return richTextArray.map((rt) => rt.plain_text ?? "").join("");
 }
 
-// 파일 URL 추출
-function getFileUrl(value: any): string {
-  if (!value) return "";
-  if (value.type === "external") return value.external?.url || "";
-  if (value.type === "file") return value.file?.url || "";
-  if (value.file?.url) return value.file.url;
-  if (value.external?.url) return value.external.url;
+// --- URL helpers for Notion file-like objects ------------------------------
+
+function extractFileUrl(
+  file:
+    | ImageBlockObjectResponse["image"]
+    | VideoBlockObjectResponse["video"]
+    | AudioBlockObjectResponse["audio"]
+    | PdfBlockObjectResponse["pdf"]
+    | FileBlockObjectResponse["file"]
+    | undefined
+): string {
+  if (!file) return "";
+  if (file.type === "external") return file.external?.url ?? "";
+  if (file.type === "file") return file.file?.url ?? ""; // may be temporary
   return "";
 }
 
-// 중첩된 자식 블록을 렌더링하는 헬퍼 함수
-function renderChildren(block: any): React.ReactNode[] {
-  if (!block.children || block.children.length === 0) return [];
-  return block.children.map((child: any, idx: number) =>
-    renderBlock(child, idx, block.children)
+// --- Children helper --------------------------------------------------------
+
+function renderChildren(block: BlockWithChildren): React.ReactNode[] {
+  if (!("children" in block) || !block.children || block.children.length === 0)
+    return [];
+  return block.children.map((child, idx) => renderBlock(child, idx));
+}
+
+// --- Type guards ------------------------------------------------------------
+
+const isFullBlock = (
+  b: BlockWithChildren
+): b is BlockObjectResponse & { children?: BlockWithChildren[] } => {
+  // full blocks have stable properties like object, has_children, archived
+  return (
+    (b as BlockObjectResponse).object === "block" &&
+    "id" in b &&
+    "type" in b &&
+    "has_children" in (b as BlockObjectResponse) &&
+    "archived" in (b as BlockObjectResponse)
+  );
+};
+
+function assertNever(x: never): never {
+  throw new Error(`Unhandled case: ${JSON.stringify(x)}`);
+}
+
+// A best-effort heuristic: consider a table row "colored" when any cell has a background color.
+function isColoredRow(row: TableRowBlockObjectResponse): boolean {
+  return row.table_row.cells.some((cell) =>
+    cell.some((rt) =>
+      (rt.annotations?.color ?? "default").endsWith("_background")
+    )
   );
 }
 
-// 블록 렌더링 함수
-function renderBlock(block: any, index: number, allBlocks: any[]) {
-  const { type, id } = block;
-  const value = block[type];
+// --- Block renderer ---------------------------------------------------------
+
+function renderBlock(block: BlockWithChildren, index: number): React.ReactNode {
+  if (!isFullBlock(block)) return null; // skip partials safely
+
+  const { id, type } = block;
 
   switch (type) {
     case "paragraph": {
+      const value = (block as ParagraphBlockObjectResponse).paragraph;
       const children = renderChildren(block);
       return (
         <div key={id}>
@@ -150,6 +214,7 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     }
 
     case "heading_1": {
+      const value = (block as Heading1BlockObjectResponse).heading_1;
       const children = renderChildren(block);
       return (
         <div key={id}>
@@ -162,6 +227,7 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     }
 
     case "heading_2": {
+      const value = (block as Heading2BlockObjectResponse).heading_2;
       const children = renderChildren(block);
       return (
         <div key={id}>
@@ -174,6 +240,7 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     }
 
     case "heading_3": {
+      const value = (block as Heading3BlockObjectResponse).heading_3;
       const children = renderChildren(block);
       return (
         <div key={id}>
@@ -186,6 +253,8 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     }
 
     case "bulleted_list_item": {
+      const value = (block as BulletedListItemBlockObjectResponse)
+        .bulleted_list_item;
       const children = renderChildren(block);
       return (
         <li key={id} className="ml-6 mb-2 list-disc">
@@ -196,6 +265,8 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     }
 
     case "numbered_list_item": {
+      const value = (block as NumberedListItemBlockObjectResponse)
+        .numbered_list_item;
       const children = renderChildren(block);
       return (
         <li key={id} className="ml-6 mb-2 list-decimal">
@@ -206,6 +277,7 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     }
 
     case "to_do": {
+      const value = (block as ToDoBlockObjectResponse).to_do;
       const checked = Boolean(value.checked);
       return (
         <Todo key={id} id={id} checked={checked}>
@@ -214,14 +286,17 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
       );
     }
 
-    case "toggle":
+    case "toggle": {
+      const value = (block as ToggleBlockObjectResponse).toggle;
       return (
         <Toggle key={id} id={id} summary={renderRichText(value.rich_text)}>
           {renderChildren(block)}
         </Toggle>
       );
+    }
 
     case "quote": {
+      const value = (block as QuoteBlockObjectResponse).quote;
       const children = renderChildren(block);
       return (
         <div key={id}>
@@ -234,10 +309,11 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     }
 
     case "callout": {
-      const icon = value.icon?.emoji || "💡";
+      const value = (block as CalloutBlockObjectResponse).callout;
+      const icon = value.icon?.type === "emoji" ? value.icon.emoji : "💡";
       const children = renderChildren(block);
       return (
-        <Callout key={id} id={id} icon={icon}>
+        <Callout key={id} id={id} icon={icon ?? "💡"}>
           <div className="space-y-2">
             {value.rich_text && value.rich_text.length > 0 && (
               <div>{renderRichText(value.rich_text)}</div>
@@ -249,16 +325,20 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     }
 
     case "code": {
+      const value = (block as CodeBlockObjectResponse).code;
       const code = getPlainText(value.rich_text);
-      const language = value.language || "plaintext";
+      const language = value.language ?? "plaintext";
       return <CodeBlock key={id} id={id} code={code} language={language} />;
     }
 
-    case "divider":
+    case "divider": {
+      (block as DividerBlockObjectResponse).divider; // type narrow for parity
       return <hr key={id} className="my-6 border-t border-gray-200" />;
+    }
 
     case "image": {
-      const src = getFileUrl(value);
+      const value = (block as ImageBlockObjectResponse).image;
+      const src = extractFileUrl(value);
       const caption = getPlainText(value.caption);
       if (!src) return null;
       return (
@@ -279,26 +359,34 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     }
 
     case "video": {
-      const src = getFileUrl(value);
-      const externalUrl = value?.external?.url;
+      const value = (block as VideoBlockObjectResponse).video;
+      const src = extractFileUrl(value);
+      const externalUrl =
+        value.type === "external" ? value.external?.url : undefined;
       const url = src || externalUrl || "";
-      const isYouTube =
-        /youtube\.com|youtu\.be/.test(url) || /\/embed\//.test(url);
 
       if (!url) return null;
+
+      const isYouTube = /youtube\.com|youtu\.be|\/embed\//.test(url);
+      let embedSrc = url;
+      if (isYouTube) {
+        try {
+          const u = new URL(url);
+          const v = u.searchParams.get("v");
+          embedSrc = url.includes("embed")
+            ? url
+            : `https://www.youtube.com/embed/${v ?? ""}`;
+        } catch {
+          // fallback: keep original url
+        }
+      }
 
       return (
         <div key={id} className="my-6">
           {isYouTube ? (
             <div className="aspect-video w-full rounded-xl overflow-hidden border border-gray-200">
               <iframe
-                src={
-                  url.includes("embed")
-                    ? url
-                    : `https://www.youtube.com/embed/${
-                        new URL(url).searchParams.get("v") || ""
-                      }`
-                }
+                src={embedSrc}
                 title="YouTube video"
                 className="h-full w-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -317,7 +405,8 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     }
 
     case "audio": {
-      const src = getFileUrl(value);
+      const value = (block as AudioBlockObjectResponse).audio;
+      const src = extractFileUrl(value);
       if (!src) return null;
       return (
         <div key={id} className="my-4">
@@ -327,7 +416,8 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     }
 
     case "pdf": {
-      const url = getFileUrl(value);
+      const value = (block as PdfBlockObjectResponse).pdf;
+      const url = extractFileUrl(value);
       const caption = getPlainText(value.caption);
       if (!url) return null;
       return (
@@ -346,7 +436,8 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     }
 
     case "embed": {
-      const url = value?.url;
+      const value = (block as EmbedBlockObjectResponse).embed;
+      const url = value.url;
       if (!url) return null;
       return (
         <div key={id} className="my-6">
@@ -366,7 +457,8 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     }
 
     case "link_preview": {
-      const url = value?.url;
+      const value = (block as LinkPreviewBlockObjectResponse).link_preview;
+      const url = value.url;
       if (!url) return null;
       return (
         <a
@@ -382,8 +474,14 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     }
 
     case "file": {
-      const url = getFileUrl(value);
-      const name = value?.name || "파일";
+      const value = (block as FileBlockObjectResponse).file;
+      const url = extractFileUrl(value);
+      const name =
+        value.type === "file"
+          ? value.file?.expiry_time
+            ? "파일"
+            : "파일"
+          : "파일"; // name is not exposed; keep label generic
       const caption = getPlainText(value.caption);
       if (!url) return null;
       return (
@@ -417,120 +515,84 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     }
 
     case "table": {
-      // 테이블의 자식 블록들(table_row)을 수집
-      const tableRows = block.children || [];
-      const hasColumnHeader = value?.has_column_header || false;
-      const hasRowHeader = value?.has_row_header || false;
+      const value = (block as TableBlockObjectResponse).table;
+      const hasColumnHeader = value.has_column_header;
+      const hasRowHeader = value.has_row_header;
 
-      if (tableRows.length === 0) return null;
+      // Children include table_row blocks
+      const rows = (block.children ?? []).filter(
+        (b): b is BlockObjectResponse & TableRowBlockObjectResponse =>
+          isFullBlock(b) && b.type === "table_row"
+      );
 
-      // 색칠된 행을 감지하는 함수
-      const isColoredRow = (row: any): boolean => {
-        const color = row.table_row?.color;
-        return (
-          color &&
-          color !== "default" &&
-          (color.includes("_background") || color !== "default")
-        );
-      };
+      if (rows.length === 0) return null;
 
-      // 각 열이 모두 색칠되어 있는지 확인 (열 헤더 감지)
-      const columnCount = tableRows[0]?.table_row?.cells?.length || 0;
-      const coloredColumns = new Set<number>();
+      const columnCount = rows[0].table_row.cells.length;
 
-      // 모든 행이 색칠되어 있는 열 찾기
-      if (tableRows.length > 0 && !hasRowHeader) {
-        for (let colIdx = 0; colIdx < columnCount; colIdx++) {
-          const allRowsColored = tableRows.every((row: any) =>
-            isColoredRow(row)
-          );
-
-          // 첫 번째 열이 모든 행에서 색칠되어 있으면 열 헤더로 간주
-          if (colIdx === 0 && allRowsColored) {
-            coloredColumns.add(colIdx);
-          }
-        }
-      }
-
-      // 헤더 행들을 수집 (처음부터 연속된 색칠된 행들)
+      // Heuristic: treat the first consecutive colored rows at the top as header rows if table.has_column_header is false.
       let headerRowCount = 0;
       if (!hasColumnHeader) {
-        for (let i = 0; i < tableRows.length; i++) {
-          if (isColoredRow(tableRows[i])) {
-            headerRowCount++;
-          } else {
-            break;
-          }
+        for (let i = 0; i < rows.length; i++) {
+          if (isColoredRow(rows[i])) headerRowCount++;
+          else break;
         }
       }
 
-      const useColorAsHeader = headerRowCount > 0;
-      const finalHeaderCount = hasColumnHeader
-        ? 1
-        : useColorAsHeader
-        ? headerRowCount
-        : 0;
+      const finalHeaderCount = hasColumnHeader ? 1 : headerRowCount;
 
       return (
         <div key={id} className="my-6">
           <Table>
             {finalHeaderCount > 0 && (
               <TableHeader>
-                {tableRows.slice(0, finalHeaderCount).map((row: any) => (
+                {rows.slice(0, finalHeaderCount).map((row) => (
                   <TableRow key={row.id}>
-                    {row.table_row?.cells?.map(
-                      (cell: any[], cellIdx: number) => (
-                        <TableHead key={cellIdx}>
-                          {renderRichText(cell)}
-                        </TableHead>
-                      )
-                    )}
+                    {row.table_row.cells.map((cell, cellIdx) => (
+                      <TableHead key={`${row.id}-${cellIdx}`}>
+                        {renderRichText(cell)}
+                      </TableHead>
+                    ))}
                   </TableRow>
                 ))}
               </TableHeader>
             )}
             <TableBody>
-              {tableRows
-                .slice(finalHeaderCount)
-                .map((row: any, rowIdx: number) => {
-                  const cells = row.table_row?.cells || [];
-                  const isRowColored = isColoredRow(row);
+              {rows.slice(finalHeaderCount).map((row) => {
+                const cells = row.table_row.cells;
+                const rowIsColored = isColoredRow(row);
 
-                  return (
-                    <TableRow key={row.id || rowIdx}>
-                      {cells.map((cell: any[], cellIdx: number) => {
-                        // 열 헤더, 행 헤더, 또는 색칠된 행인 경우
-                        if (
-                          coloredColumns.has(cellIdx) ||
-                          (hasRowHeader && cellIdx === 0) ||
-                          isRowColored
-                        ) {
-                          return (
-                            <TableHead key={cellIdx}>
-                              {renderRichText(cell)}
-                            </TableHead>
-                          );
-                        }
-                        return (
-                          <TableCell key={cellIdx}>
-                            {renderRichText(cell)}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  );
-                })}
+                return (
+                  <TableRow key={row.id}>
+                    {cells.map((cell, cellIdx) => {
+                      const asHeader =
+                        (hasRowHeader && cellIdx === 0) || rowIsColored;
+                      return asHeader ? (
+                        <TableHead key={`${row.id}-${cellIdx}`}>
+                          {renderRichText(cell)}
+                        </TableHead>
+                      ) : (
+                        <TableCell key={`${row.id}-${cellIdx}`}>
+                          {renderRichText(cell)}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
       );
     }
 
-    case "table_row":
-      // table_row는 table 블록 내에서 처리되므로 여기서는 null 반환
+    case "table_row": {
+      // handled within table
+      (block as TableRowBlockObjectResponse).table_row;
       return null;
+    }
 
-    case "table_of_contents":
+    case "table_of_contents": {
+      (block as TableOfContentsBlockObjectResponse).table_of_contents;
       return (
         <nav
           key={id}
@@ -541,76 +603,90 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
           </span>
         </nav>
       );
+    }
 
     case "synced_block": {
-      const children = renderChildren(block);
+      (block as SyncedBlockBlockObjectResponse).synced_block;
       return (
         <div key={id} className="my-4">
-          {children}
+          {renderChildren(block)}
         </div>
       );
     }
 
     case "child_page": {
-      const children = renderChildren(block);
+      const value = (block as ChildPageBlockObjectResponse).child_page;
       return (
         <div key={id} className="my-2">
           <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
             <span>📄</span>
             <span className="font-medium">{value.title}</span>
           </span>
-          {children.length > 0 && <div className="ml-6 mt-2">{children}</div>}
+          {renderChildren(block).length > 0 && (
+            <div className="ml-6 mt-2">{renderChildren(block)}</div>
+          )}
         </div>
       );
     }
 
     case "child_database": {
-      const children = renderChildren(block);
+      const value = (block as ChildDatabaseBlockObjectResponse).child_database;
       return (
         <div key={id} className="my-2">
           <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
             <span>📚</span>
             <span className="font-medium">{value.title}</span>
           </span>
-          {children.length > 0 && <div className="ml-6 mt-2">{children}</div>}
+          {renderChildren(block).length > 0 && (
+            <div className="ml-6 mt-2">{renderChildren(block)}</div>
+          )}
         </div>
       );
     }
 
     case "column_list": {
-      const children = renderChildren(block);
+      (block as ColumnListBlockObjectResponse).column_list;
       return (
         <div key={id} className="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
-          {children}
+          {renderChildren(block)}
         </div>
       );
     }
 
     case "column": {
-      const children = renderChildren(block);
+      (block as ColumnBlockObjectResponse).column;
       return (
         <div key={id} className="space-y-2">
-          {children}
+          {renderChildren(block)}
         </div>
       );
     }
 
-    default:
+    default: {
+      // If a new Notion block type appears, surface it during development
+      assertNever(type as never);
       return null;
+    }
   }
 }
 
 export default async function ArticleDetailPage({ params }: PageProps) {
   const { id } = await params;
-  let page: any;
-  let blocks: any[];
+
+  let page: PageObjectResponse;
+  let blocks: BlockWithChildren[] = [];
 
   try {
-    page = await getNotionPage(id);
-    blocks = await getNotionBlocks(id);
+    page = (await getNotionPage(id)) as PageObjectResponse;
+    blocks = (await getNotionBlocks(id)) as BlockWithChildren[];
   } catch (error) {
+    // If fetching fails or page is not found
     notFound();
   }
+
+  // Type guards ensure we only proceed when page exists
+  if (!page) notFound();
+
   const title = getTitle(page.properties);
   const date = getDateISO(page.properties);
 
@@ -623,9 +699,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
         </header>
 
         <div className="prose prose-lg max-w-none">
-          {blocks.map((block: any, index: number) =>
-            renderBlock(block, index, blocks)
-          )}
+          {blocks.map((block, index) => renderBlock(block, index))}
         </div>
       </article>
     </main>
