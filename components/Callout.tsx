@@ -1,5 +1,4 @@
 "use client";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 interface CalloutProps {
   icon?: string;
