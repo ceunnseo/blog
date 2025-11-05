@@ -25,9 +25,11 @@ export function CodeBlockRenderer({
   const languageRaw = v.language ?? "plaintext";
 
   // 노션 언어를 shadcn BundledLanguage로 정규화
-  const normalizedLanguage = (
-    languageRaw || "plaintext"
-  ).toLowerCase() as BundledLanguage;
+  const normalizedLanguage = (() => {
+    const lang = (languageRaw || "plaintext").toLowerCase();
+    if (lang === "plain text" || lang === "text") return "plaintext";
+    return lang as BundledLanguage;
+  })();
 
   // 캡션을 파일명으로 지정
   const caption = getPlainText(v.caption);
