@@ -1,12 +1,19 @@
-//개별 아티클 페이지//개별 아티클 페이지
+//개별 아티클 페이지
 import { notFound } from "next/navigation";
 import { getNotionPage, getNotionBlocks } from "@/lib/notion";
 import { CodeBlock } from "@/components/CodeBlock";
 import { Callout } from "@/components/Callout";
 import { Toggle } from "@/components/Toggle";
 import { Todo } from "@/components/Todo";
-import { NotionTable } from "@/components/NotionTable";
 import { getTitle, getDateISO } from "@/lib/notion-utils";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type PageProps = {
   params: { id: string };
@@ -27,75 +34,79 @@ type NotionRichText = {
 // Rich Text를 파싱해서 강조/코드/링크 등을 처리
 function renderRichText(
   richTextArray: NotionRichText[] | undefined
-): React.ReactNode[] {
-  if (!richTextArray || richTextArray.length === 0) return [];
+): React.ReactNode {
+  if (!richTextArray || richTextArray.length === 0) return null;
 
-  return richTextArray.map((rt, idx) => {
-    const text = rt.plain_text || "";
-    const annotations = rt.annotations || {};
-    const href = rt.href;
+  return (
+    <>
+      {richTextArray.map((rt, idx) => {
+        const text = rt.plain_text || "";
+        const annotations = rt.annotations || {};
+        const href = rt.href;
 
-    let element: any = text;
+        let element: any = text;
 
-    // 링크
-    if (href) {
-      element = (
-        <a key={idx} href={href} target="_blank" rel="noreferrer">
-          {element}
-        </a>
-      );
-    }
+        // 링크
+        if (href) {
+          element = (
+            <a key={idx} href={href} target="_blank" rel="noreferrer">
+              {element}
+            </a>
+          );
+        }
 
-    // 코드 (인라인)
-    if (annotations.code) {
-      element = (
-        <code
-          key={idx}
-          className="px-1.5 py-0.5 bg-gray-100 text-red-600 rounded text-sm font-mono"
-        >
-          {element}
-        </code>
-      );
-    }
+        // 코드 (인라인)
+        if (annotations.code) {
+          element = (
+            <code
+              key={idx}
+              className="px-1.5 py-0.5 bg-gray-100 text-red-600 rounded text-sm font-mono"
+            >
+              {element}
+            </code>
+          );
+        }
 
-    // 볼드
-    if (annotations.bold) {
-      element = (
-        <strong key={idx} className="font-bold">
-          {element}
-        </strong>
-      );
-    }
+        // 볼드
+        if (annotations.bold) {
+          element = (
+            <strong key={idx} className="font-bold">
+              {element}
+            </strong>
+          );
+        }
 
-    // 이탤릭
-    if (annotations.italic) {
-      element = (
-        <em key={idx} className="italic">
-          {element}
-        </em>
-      );
-    }
+        // 이탤릭
+        if (annotations.italic) {
+          element = (
+            <em key={idx} className="italic">
+              {element}
+            </em>
+          );
+        }
 
-    // 취소선
-    if (annotations.strikethrough) {
-      element = (
-        <s key={idx} className="line-through">
-          {element}
-        </s>
-      );
-    }
+        // 취소선
+        if (annotations.strikethrough) {
+          element = (
+            <s key={idx} className="line-through">
+              {element}
+            </s>
+          );
+        }
 
-    // 밑줄
-    if (annotations.underline) {
-      element = (
-        <u key={idx} className="underline">
-          {element}
-        </u>
-      );
-    }
+        // 밑줄
+        if (annotations.underline) {
+          element = (
+            <u key={idx} className="underline">
+              {element}
+            </u>
+          );
+        }
 
-    return <span key={idx}>{element}</span>;
-  });
+        return <span key={idx}>{element}</span>;
+      })}
+    </>
+  );
 }
 
 // 일반 텍스트만 추출 (fallback용)
@@ -114,53 +125,85 @@ function getFileUrl(value: any): string {
   return "";
 }
 
+// 중첩된 자식 블록을 렌더링하는 헬퍼 함수
+function renderChildren(block: any): React.ReactNode[] {
+  if (!block.children || block.children.length === 0) return [];
+  return block.children.map((child: any, idx: number) =>
+    renderBlock(child, idx, block.children)
+  );
+}
+
 // 블록 렌더링 함수
 function renderBlock(block: any, index: number, allBlocks: any[]) {
   const { type, id } = block;
   const value = block[type];
 
   switch (type) {
-    case "paragraph":
+    case "paragraph": {
+      const children = renderChildren(block);
       return (
-        <p key={id} className="mb-4 leading-7">
-          {renderRichText(value.rich_text)}
-        </p>
+        <div key={id}>
+          <p className="mb-4 leading-7">{renderRichText(value.rich_text)}</p>
+          {children.length > 0 && <div className="ml-6">{children}</div>}
+        </div>
       );
+    }
 
-    case "heading_1":
+    case "heading_1": {
+      const children = renderChildren(block);
       return (
-        <h1 key={id} className="text-3xl font-bold mb-4 mt-8">
-          {renderRichText(value.rich_text)}
-        </h1>
+        <div key={id}>
+          <h1 className="text-3xl font-bold mb-4 mt-8">
+            {renderRichText(value.rich_text)}
+          </h1>
+          {children.length > 0 && <div className="ml-6">{children}</div>}
+        </div>
       );
+    }
 
-    case "heading_2":
+    case "heading_2": {
+      const children = renderChildren(block);
       return (
-        <h2 key={id} className="text-2xl font-bold mb-3 mt-6">
-          {renderRichText(value.rich_text)}
-        </h2>
+        <div key={id}>
+          <h2 className="text-2xl font-bold mb-3 mt-6">
+            {renderRichText(value.rich_text)}
+          </h2>
+          {children.length > 0 && <div className="ml-6">{children}</div>}
+        </div>
       );
+    }
 
-    case "heading_3":
+    case "heading_3": {
+      const children = renderChildren(block);
       return (
-        <h3 key={id} className="text-xl font-semibold mb-2 mt-4">
-          {renderRichText(value.rich_text)}
-        </h3>
+        <div key={id}>
+          <h3 className="text-xl font-semibold mb-2 mt-4">
+            {renderRichText(value.rich_text)}
+          </h3>
+          {children.length > 0 && <div className="ml-6">{children}</div>}
+        </div>
       );
+    }
 
-    case "bulleted_list_item":
+    case "bulleted_list_item": {
+      const children = renderChildren(block);
       return (
         <li key={id} className="ml-6 mb-2 list-disc">
           {renderRichText(value.rich_text)}
+          {children.length > 0 && <ul className="mt-2">{children}</ul>}
         </li>
       );
+    }
 
-    case "numbered_list_item":
+    case "numbered_list_item": {
+      const children = renderChildren(block);
       return (
         <li key={id} className="ml-6 mb-2 list-decimal">
           {renderRichText(value.rich_text)}
+          {children.length > 0 && <ol className="mt-2">{children}</ol>}
         </li>
       );
+    }
 
     case "to_do": {
       const checked = Boolean(value.checked);
@@ -174,27 +217,33 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     case "toggle":
       return (
         <Toggle key={id} id={id} summary={renderRichText(value.rich_text)}>
-          {block.children?.map((child: any, idx: number) =>
-            renderBlock(child, idx, block.children)
-          )}
+          {renderChildren(block)}
         </Toggle>
       );
 
-    case "quote":
+    case "quote": {
+      const children = renderChildren(block);
       return (
-        <blockquote
-          key={id}
-          className="border-l-4 border-gray-300 pl-4 italic text-gray-700 dark:text-gray-100 my-4"
-        >
-          {renderRichText(value.rich_text)}
-        </blockquote>
+        <div key={id}>
+          <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-700 dark:text-gray-100 my-4">
+            {renderRichText(value.rich_text)}
+          </blockquote>
+          {children.length > 0 && <div className="ml-6">{children}</div>}
+        </div>
       );
+    }
 
     case "callout": {
       const icon = value.icon?.emoji || "💡";
+      const children = renderChildren(block);
       return (
         <Callout key={id} id={id} icon={icon}>
-          {renderRichText(value.rich_text)}
+          <div className="space-y-2">
+            {value.rich_text && value.rich_text.length > 0 && (
+              <div>{renderRichText(value.rich_text)}</div>
+            )}
+            {children}
+          </div>
         </Callout>
       );
     }
@@ -368,13 +417,112 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
     }
 
     case "table": {
+      // 테이블의 자식 블록들(table_row)을 수집
+      const tableRows = block.children || [];
+      const hasColumnHeader = value?.has_column_header || false;
+      const hasRowHeader = value?.has_row_header || false;
+
+      if (tableRows.length === 0) return null;
+
+      // 색칠된 행을 감지하는 함수
+      const isColoredRow = (row: any): boolean => {
+        const color = row.table_row?.color;
+        return (
+          color &&
+          color !== "default" &&
+          (color.includes("_background") || color !== "default")
+        );
+      };
+
+      // 각 열이 모두 색칠되어 있는지 확인 (열 헤더 감지)
+      const columnCount = tableRows[0]?.table_row?.cells?.length || 0;
+      const coloredColumns = new Set<number>();
+
+      // 모든 행이 색칠되어 있는 열 찾기
+      if (tableRows.length > 0 && !hasRowHeader) {
+        for (let colIdx = 0; colIdx < columnCount; colIdx++) {
+          const allRowsColored = tableRows.every((row: any) =>
+            isColoredRow(row)
+          );
+
+          // 첫 번째 열이 모든 행에서 색칠되어 있으면 열 헤더로 간주
+          if (colIdx === 0 && allRowsColored) {
+            coloredColumns.add(colIdx);
+          }
+        }
+      }
+
+      // 헤더 행들을 수집 (처음부터 연속된 색칠된 행들)
+      let headerRowCount = 0;
+      if (!hasColumnHeader) {
+        for (let i = 0; i < tableRows.length; i++) {
+          if (isColoredRow(tableRows[i])) {
+            headerRowCount++;
+          } else {
+            break;
+          }
+        }
+      }
+
+      const useColorAsHeader = headerRowCount > 0;
+      const finalHeaderCount = hasColumnHeader
+        ? 1
+        : useColorAsHeader
+        ? headerRowCount
+        : 0;
+
       return (
-        <NotionTable
-          key={id}
-          id={id}
-          block={block}
-          renderRichText={renderRichText}
-        />
+        <div key={id} className="my-6">
+          <Table>
+            {finalHeaderCount > 0 && (
+              <TableHeader>
+                {tableRows.slice(0, finalHeaderCount).map((row: any) => (
+                  <TableRow key={row.id}>
+                    {row.table_row?.cells?.map(
+                      (cell: any[], cellIdx: number) => (
+                        <TableHead key={cellIdx}>
+                          {renderRichText(cell)}
+                        </TableHead>
+                      )
+                    )}
+                  </TableRow>
+                ))}
+              </TableHeader>
+            )}
+            <TableBody>
+              {tableRows
+                .slice(finalHeaderCount)
+                .map((row: any, rowIdx: number) => {
+                  const cells = row.table_row?.cells || [];
+                  const isRowColored = isColoredRow(row);
+
+                  return (
+                    <TableRow key={row.id || rowIdx}>
+                      {cells.map((cell: any[], cellIdx: number) => {
+                        // 열 헤더, 행 헤더, 또는 색칠된 행인 경우
+                        if (
+                          coloredColumns.has(cellIdx) ||
+                          (hasRowHeader && cellIdx === 0) ||
+                          isRowColored
+                        ) {
+                          return (
+                            <TableHead key={cellIdx}>
+                              {renderRichText(cell)}
+                            </TableHead>
+                          );
+                        }
+                        return (
+                          <TableCell key={cellIdx}>
+                            {renderRichText(cell)}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  );
+                })}
+            </TableBody>
+          </Table>
+        </div>
       );
     }
 
@@ -394,28 +542,58 @@ function renderBlock(block: any, index: number, allBlocks: any[]) {
         </nav>
       );
 
-    case "synced_block":
-      return <div key={id} className="my-4" />;
+    case "synced_block": {
+      const children = renderChildren(block);
+      return (
+        <div key={id} className="my-4">
+          {children}
+        </div>
+      );
+    }
 
-    case "child_page":
+    case "child_page": {
+      const children = renderChildren(block);
       return (
         <div key={id} className="my-2">
           <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
             <span>📄</span>
             <span className="font-medium">{value.title}</span>
           </span>
+          {children.length > 0 && <div className="ml-6 mt-2">{children}</div>}
         </div>
       );
+    }
 
-    case "child_database":
+    case "child_database": {
+      const children = renderChildren(block);
       return (
         <div key={id} className="my-2">
           <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
             <span>📚</span>
             <span className="font-medium">{value.title}</span>
           </span>
+          {children.length > 0 && <div className="ml-6 mt-2">{children}</div>}
         </div>
       );
+    }
+
+    case "column_list": {
+      const children = renderChildren(block);
+      return (
+        <div key={id} className="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
+          {children}
+        </div>
+      );
+    }
+
+    case "column": {
+      const children = renderChildren(block);
+      return (
+        <div key={id} className="space-y-2">
+          {children}
+        </div>
+      );
+    }
 
     default:
       return null;
