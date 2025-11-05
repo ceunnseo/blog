@@ -16,7 +16,7 @@ export function CalloutBlock({ block, childrenNodes }: Props) {
   const hasChildren = Array.isArray(childrenNodes) && childrenNodes.length > 0;
 
   return (
-    <Card className="p-4" role="note" aria-labelledby={block.id}>
+    <Card className="p-4 my-6" role="note" aria-labelledby={block.id}>
       <div className="flex gap-3">
         <span className="text-xl flex-shrink-0 mt-0.5" aria-hidden>
           {icon}
