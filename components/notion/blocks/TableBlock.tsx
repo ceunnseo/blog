@@ -36,7 +36,7 @@ function isColoredRow(row: TableRowBlockObjectResponse): boolean {
 export function TableBlock({ block }: Props) {
   const v = block.table;
 
-  const rows = (("children" in block ? block.children : []) ?? []).filter(
+  const rows = (block.children ?? []).filter(
     (b): b is BlockObjectResponse & TableRowBlockObjectResponse =>
       isFullBlock(b) && b.type === "table_row"
   );
