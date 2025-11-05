@@ -5,9 +5,10 @@ import { CodeBlock } from "@/components/CodeBlock";
 import { Callout } from "@/components/Callout";
 import { Toggle } from "@/components/Toggle";
 import { Todo } from "@/components/Todo";
+import { getTitle } from "@/lib/notion-utils";
 
 type PageProps = {
-  params: { id: string }; // <- Promise 아님!
+  params: { id: string };
 };
 
 type NotionDateProperty = { date?: { start?: string | null } };
@@ -39,10 +40,6 @@ type NotionBlockBase = {
   type: string;
   [key: string]: any;
 };
-
-function getTitle(properties: NotionProperties): string {
-  return properties?.["이름"]?.title?.[0]?.plain_text ?? "(untitled)";
-}
 
 function getDate(properties: NotionProperties): string {
   const d = properties?.["날짜"]?.date?.start;

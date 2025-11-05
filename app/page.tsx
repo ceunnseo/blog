@@ -1,51 +1,67 @@
-// app/posts/page.tsx
+// notion API 호출
 import { queryNotionDB } from "@/lib/notion";
+import type {
+  PageObjectResponse,
+  PartialPageObjectResponse,
+} from "@notionhq/client";
+import { isFullPage } from "@notionhq/client";
+import { getTitle } from "@/lib/notion-utils";
 import Link from "next/link";
 
-type NotionDateProperty = { date?: { start?: string | null } };
-type NotionTitleProperty = { title?: Array<{ plain_text?: string }> };
+// ISR: 1분
+export const revalidate = 60;
 
-type NotionProperties = Record<string, unknown> & {
-  ["이름"]?: NotionTitleProperty;
-  ["날짜"]?: NotionDateProperty;
-};
+/** Notion properties 타입 (SDK 그대로 재사용) */
+export type NotionProperties = PageObjectResponse["properties"];
 
-type PostPage = {
-  id: string;
-  properties: NotionProperties;
-};
+const PROP_TITLE = "이름";
+const PROP_DATE = "날짜";
+const PROP_OPEN_STATE = "공개여부";
 
-//Notion post의 title 추출하기
-function getTitle(p: NotionProperties): string {
-  const t = p?.["이름"]?.title?.[0]?.plain_text ?? "(untitled)";
-  return t;
+/** ISO 날짜 추출 (type-safe) */
+export function getDateISO(
+  props: NotionProperties,
+  key = PROP_DATE
+): string | undefined {
+  const prop = props[key];
+  if (!prop || prop.type !== "date") return undefined;
+  return prop.date?.start ?? undefined;
 }
 
-//Notion post의 date 추출하기
-function getDate(p: NotionProperties): string {
-  const d = p?.["날짜"]?.date?.start;
-  if (!d) return "알 수 없음";
-
-  const date = new Date(d);
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1; // JS는 0부터 시작
-  const day = date.getDate();
-
-  return `${year}.${month}.${day}`;
+/** YYYY.MM.DD 포맷 */
+function toDisplayDate(iso?: string): string {
+  if (!iso) return "알 수 없음";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "알 수 없음";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}.${m}.${day}`;
 }
 
 export default async function Home() {
   const databaseId = process.env.NOTION_DATABASE_ID!;
-  const rows = await queryNotionDB<PostPage>(databaseId, {
+  const result = await queryNotionDB<
+    PageObjectResponse | PartialPageObjectResponse
+  >(databaseId, {
+    filter: {
+      property: PROP_OPEN_STATE,
+      select: {
+        equals: "공개", // '공개' 옵션으로 설정된 페이지만
+      },
+    },
     page_size: 5,
-    sorts: [{ property: "날짜", direction: "descending" }],
+    sorts: [{ property: PROP_DATE, direction: "descending" }],
   });
-  console.log("rows", rows);
+
+  // properties 없는 partial 페이지 제거
+  const rows = result.filter(isFullPage); // PageObjectResponse[]
 
   return (
     <main className="mx-auto max-w-2xl py-10">
       {/* 소개 섹션 */}
       <section className="mb-16">
+        <h2 className="sr-only">소개</h2>
         <p className="text-lg opacity-80 leading-relaxed">
           개발과 기술에 대한 생각과 배움을 꾸준히 기록하고 있습니다. 나를 위해
           기록하고, 남을 위해 공유합니다. 더 많은 지식이 순환되고, 함께 성장할
@@ -53,9 +69,9 @@ export default async function Home() {
         </p>
         <p className="text-lg opacity-80 leading-relaxed mt-6">
           생각을 깊게 하는 습관을 기르고 있습니다. 영화를 볼 때에도 '재미있다',
-          '재미없다'의 단편적인 생각을 넘어 왜 이러한 감정을 느꼈는지, 어떤
-          부분에서 그렇게 생각했는지를 생각해봅니다. 개발 역시 단순히 받아들이지
-          않고 철학을 이해하며 더 깊게 바라보려 노력합니다.
+          '재미없다'의 감상을 넘어 왜 이러한 감각을 느꼈는지, 어떤 부분에서
+          그렇게 생각했는지를 생각해봅니다. 개발 역시 단순히 받아들이지 않고
+          철학을 이해하며 더 깊게 바라보려 노력합니다.
         </p>
         <p className="text-lg opacity-80 leading-relaxed mt-6">
           기술은 문제를 해결하기 위한 수단이지 목적이 되어서는 안 된다는
@@ -69,10 +85,13 @@ export default async function Home() {
           문화입니다.
         </p>
       </section>
+
       {/* 최신 글 섹션 */}
-      <section>
+      <section aria-labelledby="latest-heading">
         <div className="flex justify-between items-center mb-6">
-          <p className="text-lg font-semibold">최신 아티클</p>
+          <h2 id="latest-heading" className="text-lg font-semibold">
+            최신 아티클
+          </h2>
           <Link
             href="/articles"
             className="text-sm opacity-70 hover:opacity-100 transition-opacity"
@@ -80,28 +99,37 @@ export default async function Home() {
             전체보기 →
           </Link>
         </div>
-        <div className="divide-y divide-gray-200">
-          {rows.map((page) => {
-            const title = getTitle(page.properties);
-            const date = getDate(page.properties);
-            return (
-              <Link
-                key={page.id}
-                href={`/articles/${page.id}`}
-                className="block py-5 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-baseline justify-between gap-4">
-                  <h3 className="text-base font-normal text-gray-900 hover:text-blue-600 transition-colors">
-                    {title}
-                  </h3>
-                  <span className="text-sm text-gray-500 whitespace-nowrap">
-                    {date}
-                  </span>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+
+        {rows.length === 0 ? (
+          <p className="text-sm opacity-70">아직 게시된 아티클이 없습니다.</p>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {rows.map((page) => {
+              const title = getTitle(page.properties);
+              const iso = getDateISO(page.properties);
+              const display = toDisplayDate(iso);
+              return (
+                <Link
+                  key={page.id}
+                  href={`/articles/${page.id}`}
+                  className="block py-5 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-baseline justify-between gap-4">
+                    <h3 className="text-base font-normal text-gray-900 hover:text-blue-600 transition-colors">
+                      {title}
+                    </h3>
+                    <time
+                      className="text-sm text-gray-500 whitespace-nowrap"
+                      dateTime={iso}
+                    >
+                      {display}
+                    </time>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </section>
     </main>
   );

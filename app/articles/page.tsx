@@ -1,5 +1,12 @@
 import Link from "next/link";
 import { queryNotionDB } from "@/lib/notion";
+import { getTitle } from "@/lib/notion-utils";
+import type {
+  PageObjectResponse,
+  PartialPageObjectResponse,
+} from "@notionhq/client";
+import { isFullPage } from "@notionhq/client";
+export const revalidate = 60;
 
 type TitleRichText = { plain_text: string };
 type TitleProperty = {
@@ -29,10 +36,6 @@ type PostPage = {
   properties: Properties;
 };
 
-function getTitle(p: Properties): string {
-  return p?.["이름"]?.title?.[0]?.plain_text ?? "(untitled)";
-}
-
 function getDate(p: Properties): string {
   const d = p?.["날짜"]?.date?.start;
   if (!d) return "알 수 없음";
@@ -44,11 +47,24 @@ function getDate(p: Properties): string {
   return `${year}.${month}.${day}`;
 }
 
+const PROP_TITLE = "이름";
+const PROP_DATE = "날짜";
+const PROP_OPEN_STATE = "공개여부";
+
 export default async function ArticlesPage() {
   const databaseId = process.env.NOTION_DATABASE_ID!;
-  const rows = await queryNotionDB<PostPage>(databaseId, {
-    sorts: [{ property: "날짜", direction: "descending" }],
+  const result = await queryNotionDB<
+    PageObjectResponse | PartialPageObjectResponse
+  >(databaseId, {
+    filter: {
+      property: PROP_OPEN_STATE,
+      select: {
+        equals: "공개", // '공개' 옵션으로 설정된 페이지만
+      },
+    },
+    sorts: [{ property: PROP_DATE, direction: "descending" }],
   });
+  const rows = result.filter(isFullPage);
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
