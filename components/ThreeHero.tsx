@@ -13,9 +13,9 @@ export default function ThreeHero() {
        CONFIGURATION
     ======================================== */
     const CONFIG = {
-      // Particle count
-      PARTICLE_COUNT: 8000,
-      PARTICLE_COUNT_MOBILE: 4000,
+      // Particle count (reduced to prevent WebGL context loss)
+      PARTICLE_COUNT: 5000,
+      PARTICLE_COUNT_MOBILE: 2500,
 
       // Colors - white only
       PARTICLE_COLOR: 0xffffff,
@@ -189,9 +189,18 @@ export default function ThreeHero() {
     }
 
     /* ========================================
-       TEXT PLANE CREATION
+       TEXT PLANE CREATION (with texture & geometry caching)
     ======================================== */
-    function createTextPlane(text: string) {
+    const textureCache = new Map<string, THREE.Texture>();
+    const sharedGeometry = new THREE.PlaneGeometry(0.5, 0.25);
+
+    function createTextTexture(text: string): THREE.Texture {
+      // Check if texture already exists in cache
+      if (textureCache.has(text)) {
+        return textureCache.get(text)!;
+      }
+
+      // Create new texture
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d')!;
 
@@ -210,7 +219,15 @@ export default function ThreeHero() {
       const texture = new THREE.CanvasTexture(canvas);
       texture.needsUpdate = true;
 
-      const geometry = new THREE.PlaneGeometry(0.5, 0.25);
+      // Cache the texture
+      textureCache.set(text, texture);
+
+      return texture;
+    }
+
+    function createTextPlane(text: string) {
+      const texture = createTextTexture(text);
+
       const material = new THREE.MeshBasicMaterial({
         map: texture,
         transparent: true,
@@ -218,7 +235,7 @@ export default function ThreeHero() {
         side: THREE.DoubleSide,
       });
 
-      const mesh = new THREE.Mesh(geometry, material);
+      const mesh = new THREE.Mesh(sharedGeometry, material);
 
       mesh.rotation.x = Math.random() * Math.PI * 2;
       mesh.rotation.y = Math.random() * Math.PI * 2;
@@ -582,9 +599,19 @@ export default function ThreeHero() {
 
       // Dispose Three.js resources
       particleSprites.forEach((sprite) => {
-        sprite.geometry.dispose();
+        // Only dispose material, not geometry (shared)
         (sprite.material as THREE.Material).dispose();
       });
+
+      // Dispose shared geometry
+      sharedGeometry.dispose();
+
+      // Dispose cached textures
+      textureCache.forEach((texture) => {
+        texture.dispose();
+      });
+      textureCache.clear();
+
       renderer.dispose();
     };
   }, []);
