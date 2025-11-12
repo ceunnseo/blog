@@ -27,9 +27,9 @@ export default async function ArticleDetailPage({ params }: PageProps) {
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
       <article>
-        <header className="mb-12 pb-8 border-b border-gray-200">
-          <h1 className="text-4xl font-bold mb-3 text-gray-900">{title}</h1>
-          <time className="text-sm text-gray-500 font-mono">{date}</time>
+        <header className="mb-12 pb-8 border-b border-gray-700">
+          <h1 className="text-4xl font-bold mb-3 text-white">{title}</h1>
+          <time className="text-sm text-gray-400 font-mono">{date}</time>
         </header>
 
         <NotionBlockRenderer blocks={blocks} />

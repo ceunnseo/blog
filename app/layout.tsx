@@ -33,7 +33,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black`}
       >
         {/* Navigation matching index.html style */}
-        <nav className="fixed top-0 left-0 right-0 px-12 py-6 flex justify-between items-center z-10 pointer-events-none">
+        <nav className="fixed top-0 left-0 right-0 px-12 py-6 flex justify-between items-center z-50 pointer-events-none">
           <div className="pointer-events-auto">
             <Link
               href="/"
