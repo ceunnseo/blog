@@ -288,6 +288,10 @@
             // Circle dimensions
             CIRCLE_RADIUS: 3,
 
+            // Camera rotation
+            ROTATION_SENSITIVITY: 0.005,
+            ROTATION_DAMPING: 0.95,
+
             // Performance
             USE_REDUCED_MOTION: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
             IS_MOBILE: window.innerWidth < 768
@@ -323,6 +327,18 @@
         let scrollProgress = 0;
         let mouseNDC = { x: 0, y: 0 };
         let mouse3D = new THREE.Vector3();
+
+        // Camera rotation state (spherical coordinates)
+        let cameraTheta = 0;          // Horizontal rotation (azimuth)
+        let cameraPhi = Math.PI / 2;  // Vertical rotation (polar) - start at equator
+        let cameraRadius = CONFIG.CAMERA_START_Z;
+        let cameraThetaVelocity = 0;
+        let cameraPhiVelocity = 0;
+
+        // Mouse drag state
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
 
         /* ========================================
            UTILITY FUNCTIONS
@@ -670,17 +686,38 @@
         ======================================== */
 
         /**
-         * Update camera position based on scroll
+         * Update camera position based on scroll and rotation
          */
         function updateCamera() {
             const tB = smoothstep(CONFIG.ACT2_START, CONFIG.ACT2_END, scrollProgress);
             const tC = smoothstep(CONFIG.ACT3_START, CONFIG.ACT3_END, scrollProgress);
 
-            // Zoom out during Act 2, then zoom in during Act 3
-            let targetZ = mix(CONFIG.CAMERA_START_Z, CONFIG.CAMERA_END_Z, tB);
-            targetZ = mix(targetZ, CONFIG.CAMERA_START_Z - 5, tC);
+            // Update camera radius based on scroll (zoom)
+            let targetRadius = mix(CONFIG.CAMERA_START_Z, CONFIG.CAMERA_END_Z, tB);
+            targetRadius = mix(targetRadius, CONFIG.CAMERA_START_Z - 5, tC);
+            cameraRadius = targetRadius;
 
-            camera.position.z = targetZ;
+            // Apply velocity damping for smooth rotation
+            cameraThetaVelocity *= CONFIG.ROTATION_DAMPING;
+            cameraPhiVelocity *= CONFIG.ROTATION_DAMPING;
+
+            // Update angles with velocity
+            cameraTheta += cameraThetaVelocity;
+            cameraPhi += cameraPhiVelocity;
+
+            // Clamp phi to prevent camera from flipping (keep between 0.1 and PI - 0.1)
+            cameraPhi = clamp(cameraPhi, 0.1, Math.PI - 0.1);
+
+            // Convert spherical coordinates to Cartesian
+            const x = cameraRadius * Math.sin(cameraPhi) * Math.sin(cameraTheta);
+            const y = cameraRadius * Math.cos(cameraPhi);
+            const z = cameraRadius * Math.sin(cameraPhi) * Math.cos(cameraTheta);
+
+            // Update camera position
+            camera.position.set(x, y, z);
+
+            // Always look at the center (origin)
+            camera.lookAt(0, 0, 0);
         }
 
         /* ========================================
@@ -688,7 +725,23 @@
         ======================================== */
 
         /**
-         * Update mouse position in NDC and 3D space
+         * Handle mouse down (start dragging)
+         */
+        function onMouseDown(event) {
+            isDragging = true;
+            lastMouseX = event.clientX;
+            lastMouseY = event.clientY;
+        }
+
+        /**
+         * Handle mouse up (stop dragging)
+         */
+        function onMouseUp(event) {
+            isDragging = false;
+        }
+
+        /**
+         * Update mouse position and handle camera rotation
          */
         function onMouseMove(event) {
             // Normalize to [-1, 1]
@@ -701,6 +754,19 @@
                 mouseNDC.y * (camera.position.z * Math.tan(THREE.MathUtils.degToRad(CONFIG.CAMERA_FOV / 2))),
                 0
             );
+
+            // Handle camera rotation when dragging
+            if (isDragging) {
+                const deltaX = event.clientX - lastMouseX;
+                const deltaY = event.clientY - lastMouseY;
+
+                // Update camera rotation velocities
+                cameraThetaVelocity += deltaX * CONFIG.ROTATION_SENSITIVITY;
+                cameraPhiVelocity += deltaY * CONFIG.ROTATION_SENSITIVITY;
+
+                lastMouseX = event.clientX;
+                lastMouseY = event.clientY;
+            }
         }
 
         /* ========================================
@@ -766,7 +832,13 @@
                 0.1,
                 1000
             );
-            camera.position.set(0, 0, CONFIG.CAMERA_START_Z);
+
+            // Set initial camera position using spherical coordinates
+            const x = cameraRadius * Math.sin(cameraPhi) * Math.sin(cameraTheta);
+            const y = cameraRadius * Math.cos(cameraPhi);
+            const z = cameraRadius * Math.sin(cameraPhi) * Math.cos(cameraTheta);
+            camera.position.set(x, y, z);
+            camera.lookAt(0, 0, 0);
 
             // Create renderer
             renderer = new THREE.WebGLRenderer({
@@ -795,8 +867,10 @@
             // Scroll
             window.addEventListener('scroll', updateScrollProgress, { passive: true });
 
-            // Mouse move
-            window.addEventListener('mousemove', onMouseMove, { passive: true });
+            // Mouse events
+            window.addEventListener('mousedown', onMouseDown);
+            window.addEventListener('mouseup', onMouseUp);
+            window.addEventListener('mousemove', onMouseMove);
 
             // Resize
             window.addEventListener('resize', onResize, { passive: true });
