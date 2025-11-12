@@ -441,6 +441,19 @@ export default function ThreeHero() {
         document.documentElement.scrollHeight - window.innerHeight;
 
       scrollProgress = clamp(scrollY / maxScroll, 0, 1);
+
+      // Show content section in Act 3
+      const contentSection = document.getElementById('content-section');
+      if (contentSection) {
+        const tC = smoothstep(CONFIG.ACT3_START, CONFIG.ACT3_END, scrollProgress);
+        if (tC > 0.5) {
+          contentSection.classList.remove('opacity-0', 'translate-y-10');
+          contentSection.classList.add('opacity-100', 'translate-y-0');
+        } else {
+          contentSection.classList.remove('opacity-100', 'translate-y-0');
+          contentSection.classList.add('opacity-0', 'translate-y-10');
+        }
+      }
     }
 
     /* ========================================

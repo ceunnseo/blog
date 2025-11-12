@@ -30,32 +30,23 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black`}
       >
-        <header
-          className="
-            sticky top-0 z-50
-            bg-white/70 dark:bg-neutral-900/60
-            backdrop-blur-md
-            border-b border-white/20 dark:border-white/10
-          "
-        >
-          <nav className="mx-auto max-w-4xl px-4 h-14 flex items-center">
-            <ul className="flex gap-6">
-              <li>
-                <Link href="/" className="hover:opacity-70">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link href="/articles" className="hover:opacity-70">
-                  Articles
-                </Link>
-              </li>
-            </ul>
-          </nav>
-        </header>
-        <main className="mx-auto max-w-4xl px-4 py-10">{children}</main>
+        {/* Navigation matching index.html style */}
+        <nav className="fixed top-0 left-0 right-0 px-12 py-6 flex justify-between items-center z-10 pointer-events-none">
+          <div className="text-white font-medium text-base pointer-events-auto">
+            CEUNNSEO
+          </div>
+          <div>
+            <Link
+              href="/articles"
+              className="text-white text-sm font-light tracking-wide pointer-events-auto opacity-80 hover:opacity-100 transition-opacity no-underline"
+            >
+              About
+            </Link>
+          </div>
+        </nav>
+        {children}
       </body>
     </html>
   );
