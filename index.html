@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEUNNSEO - Interactive Hero</title>
+    <style>
+        /* ========================================
+           BASE STYLES
+        ======================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            min-height: 100%;
+            background: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            overflow-x: hidden;
+        }
+
+        body {
+            /* Extend document height for scrolling */
+            min-height: 300vh;
+        }
+
+        /* Skip to content link for accessibility */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #fff;
+            color: #000;
+            padding: 8px;
+            text-decoration: none;
+            z-index: 100;
+        }
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* ========================================
+           CANVAS
+        ======================================== */
+        #hero-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: block;
+            z-index: 1;
+        }
+
+        /* ========================================
+           NAVIGATION
+        ======================================== */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 24px 48px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+            pointer-events: auto;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        nav a:hover {
+            opacity: 1;
+        }
+
+        .nav-logo {
+            font-weight: 500;
+            font-size: 16px;
+        }
+
+        /* ========================================
+           SCROLL INDICATOR
+        ======================================== */
+        .scroll-indicator {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            opacity: 1;
+            transition: opacity 0.6s;
+            pointer-events: none;
+        }
+
+        .scroll-indicator.hidden {
+            opacity: 0;
+        }
+
+        .scroll-text {
+            font-size: 12px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .scroll-line {
+            width: 1px;
+            height: 40px;
+            background: #fff;
+            margin: 0 auto;
+            animation: scrollPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes scrollPulse {
+            0%, 100% { opacity: 0.3; transform: scaleY(1); }
+            50% { opacity: 1; transform: scaleY(1.2); }
+        }
+
+        /* ========================================
+           CONTENT SECTION
+        ======================================== */
+        .content-section {
+            position: relative;
+            z-index: 2;
+            margin-top: 150vh;
+            padding: 80px 48px;
+            max-width: 960px;
+            margin-left: auto;
+            margin-right: auto;
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s, transform 0.8s;
+        }
+
+        .content-section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .content-section h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            line-height: 1.2;
+        }
+
+        .content-section p {
+            font-size: 18px;
+            line-height: 1.8;
+            margin-bottom: 16px;
+            opacity: 0.8;
+        }
+
+        .content-section .highlight {
+            display: inline-block;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        /* ========================================
+           RESPONSIVE
+        ======================================== */
+        @media (max-width: 768px) {
+            nav {
+                padding: 16px 24px;
+            }
+
+            .content-section {
+                padding: 60px 24px;
+                margin-top: 120vh;
+            }
+
+            .content-section h1 {
+                font-size: 32px;
+            }
+
+            .content-section p {
+                font-size: 16px;
+            }
+        }
+
+        /* ========================================
+           REDUCED MOTION
+        ======================================== */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Accessibility -->
+    <a href="#content" class="skip-link">Skip to content</a>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-logo">CEUNNSEO</div>
+        <div>
+            <a href="#about">About</a>
+        </div>
+    </nav>
+
+    <!-- Three.js Canvas -->
+    <canvas id="hero-canvas" aria-hidden="true"></canvas>
+
+    <!-- Scroll Indicator -->
+    <div class="scroll-indicator" id="scrollIndicator">
+        <div class="scroll-text">Scroll</div>
+        <div class="scroll-line"></div>
+    </div>
+
+    <!-- Main Content -->
+    <main id="content" class="content-section">
+        <h1>Creative Developer & Designer</h1>
+        <p>
+            안녕하세요. 저는 <span class="highlight">CEUNNSEO</span>입니다.
+            인터랙티브 웹 경험과 창의적인 디지털 솔루션을 만듭니다.
+        </p>
+        <p>
+            Three.js, WebGL, 그리고 최신 웹 기술을 활용하여
+            사용자에게 기억에 남는 경험을 제공합니다.
+        </p>
+        <p>
+            스크롤을 통해 여정을 함께해주셔서 감사합니다.
+        </p>
+    </main>
+
+    <!-- Three.js Library -->
+    <script src="https://unpkg.com/three@0.157.0/build/three.min.js"></script>
+
+    <script>
+        /* ========================================
+           CONFIGURATION
+        ======================================== */
+        const CONFIG = {
+            // Text to display
+            DISPLAY_TEXT: 'CEUNNSEO',
+
+            // Particle count
+            PARTICLE_COUNT: 8000,
+            PARTICLE_COUNT_MOBILE: 4000,
+
+            // Colors
+            PARTICLE_COLOR: 0xffffff,
+            BACKGROUND_COLOR: 0x000000,
+
+            // Camera
+            CAMERA_FOV: 45,
+            CAMERA_START_Z: 8,
+            CAMERA_END_Z: 18,
+
+            // Animation timing (scroll progress breakpoints)
+            ACT1_START: 0.00,
+            ACT1_END: 0.35,
+            ACT2_START: 0.35,
+            ACT2_END: 0.70,
+            ACT3_START: 0.70,
+            ACT3_END: 1.00,
+
+            // Mouse repulsion
+            MOUSE_REPULSION_RADIUS: 2.0,
+            MOUSE_REPULSION_STRENGTH: 0.3,
+
+            // Particle drift
+            DRIFT_SPEED: 0.0005,
+            DRIFT_AMOUNT: 0.5,
+
+            // Text sampling
+            TEXT_FONT_SIZE: 160,
+            TEXT_FONT_WEIGHT: 'bold',
+            TEXT_FONT_FAMILY: 'Arial, sans-serif',
+
+            // Performance
+            USE_REDUCED_MOTION: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+            IS_MOBILE: window.innerWidth < 768
+        };
+
+        /* ========================================
+           GLOBAL STATE
+        ======================================== */
+        let scene, camera, renderer, particlesMesh;
+        let startPositions = [];
+        let targetPositions = [];
+        let currentOffsets = [];
+        let driftOffsets = [];
+        let scrollProgress = 0;
+        let mouseNDC = { x: 0, y: 0 };
+        let mouse3D = new THREE.Vector3();
+
+        /* ========================================
+           UTILITY FUNCTIONS
+        ======================================== */
+
+        /**
+         * Clamp value between min and max
+         */
+        function clamp(value, min, max) {
+            return Math.max(min, Math.min(max, value));
+        }
+
+        /**
+         * Linear interpolation
+         */
+        function mix(a, b, t) {
+            return a * (1 - t) + b * t;
+        }
+
+        /**
+         * Smoothstep function for smooth transitions
+         */
+        function smoothstep(edge0, edge1, x) {
+            const t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+            return t * t * (3.0 - 2.0 * t);
+        }
+
+        /**
+         * Ease out cubic easing
+         */
+        function easeOutCubic(t) {
+            return 1 - Math.pow(1 - t, 3);
+        }
+
+        /**
+         * Ease out elastic for spring effect
+         */
+        function easeOutElastic(t) {
+            const c4 = (2 * Math.PI) / 3;
+            return t === 0 ? 0 : t === 1 ? 1 :
+                   Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
+        }
+
+        /* ========================================
+           TEXT SAMPLING
+        ======================================== */
+
+        /**
+         * Sample text pixels from offscreen canvas
+         * Returns array of {x, y} coordinates where text is visible
+         */
+        function sampleTextPositions(text, fontSize, fontWeight, fontFamily) {
+            // Create offscreen canvas
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Set canvas size
+            canvas.width = 1024;
+            canvas.height = 256;
+
+            // Configure text rendering
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#fff';
+            ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Draw text
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+            // Get image data
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const pixels = imageData.data;
+
+            // Sample positions where brightness exceeds threshold
+            const positions = [];
+            const threshold = 128;
+            const samplingStep = 2; // Sample every N pixels for performance
+
+            for (let y = 0; y < canvas.height; y += samplingStep) {
+                for (let x = 0; x < canvas.width; x += samplingStep) {
+                    const i = (y * canvas.width + x) * 4;
+                    const brightness = pixels[i]; // Red channel (grayscale)
+
+                    if (brightness > threshold) {
+                        // Normalize coordinates to [-1, 1] range
+                        const nx = (x / canvas.width) * 2 - 1;
+                        const ny = -(y / canvas.height) * 2 + 1; // Flip Y
+                        positions.push({ x: nx * 6, y: ny * 2, z: 0 });
+                    }
+                }
+            }
+
+            return positions;
+        }
+
+        /* ========================================
+           PARTICLE SYSTEM
+        ======================================== */
+
+        /**
+         * Create particle system with InstancedMesh
+         */
+        function createParticles() {
+            const particleCount = CONFIG.IS_MOBILE ?
+                CONFIG.PARTICLE_COUNT_MOBILE : CONFIG.PARTICLE_COUNT;
+
+            // Sample target positions from text
+            const sampledPositions = sampleTextPositions(
+                CONFIG.DISPLAY_TEXT,
+                CONFIG.TEXT_FONT_SIZE,
+                CONFIG.TEXT_FONT_WEIGHT,
+                CONFIG.TEXT_FONT_FAMILY
+            );
+
+            // Create geometry and material
+            const geometry = new THREE.PlaneGeometry(0.05, 0.05);
+            const material = new THREE.MeshBasicMaterial({
+                color: CONFIG.PARTICLE_COLOR,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            // Create instanced mesh
+            particlesMesh = new THREE.InstancedMesh(
+                geometry,
+                material,
+                particleCount
+            );
+            particlesMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+            particlesMesh.frustumCulled = false;
+
+            // Initialize positions
+            const dummy = new THREE.Object3D();
+
+            for (let i = 0; i < particleCount; i++) {
+                // Random start position (scattered)
+                const startPos = {
+                    x: (Math.random() - 0.5) * 20,
+                    y: (Math.random() - 0.5) * 20,
+                    z: (Math.random() - 0.5) * 10
+                };
+                startPositions.push(startPos);
+
+                // Target position from sampled text
+                // If we have more particles than sampled positions, reuse positions
+                const targetIndex = i % sampledPositions.length;
+                const targetPos = { ...sampledPositions[targetIndex] };
+                targetPositions.push(targetPos);
+
+                // Initialize current position to start position
+                dummy.position.set(startPos.x, startPos.y, startPos.z);
+                dummy.updateMatrix();
+                particlesMesh.setMatrixAt(i, dummy.matrix);
+
+                // Initialize offsets
+                currentOffsets.push({ x: 0, y: 0, z: 0 });
+                driftOffsets.push({
+                    speedX: (Math.random() - 0.5) * CONFIG.DRIFT_SPEED,
+                    speedY: (Math.random() - 0.5) * CONFIG.DRIFT_SPEED,
+                    speedZ: (Math.random() - 0.5) * CONFIG.DRIFT_SPEED,
+                    x: 0,
+                    y: 0,
+                    z: 0
+                });
+            }
+
+            particlesMesh.instanceMatrix.needsUpdate = true;
+            scene.add(particlesMesh);
+
+            console.log(`Created ${particleCount} particles`);
+            console.log(`Sampled ${sampledPositions.length} target positions from "${CONFIG.DISPLAY_TEXT}"`);
+        }
+
+        /**
+         * Update particle positions based on scroll progress
+         */
+        function updateParticles(deltaTime) {
+            if (!particlesMesh) return;
+
+            // Calculate progress for each act
+            const tA = smoothstep(CONFIG.ACT1_START, CONFIG.ACT1_END, scrollProgress);
+            const tB = smoothstep(CONFIG.ACT2_START, CONFIG.ACT2_END, scrollProgress);
+            const tC = smoothstep(CONFIG.ACT3_START, CONFIG.ACT3_END, scrollProgress);
+
+            // Apply easing to morph transition
+            const morphProgress = CONFIG.USE_REDUCED_MOTION ? tB : easeOutCubic(tB);
+
+            const dummy = new THREE.Object3D();
+            const particleCount = startPositions.length;
+
+            // Update drift offsets (Act 1 - particles drift randomly)
+            const driftActive = CONFIG.USE_REDUCED_MOTION ? 0 : (1 - tB);
+
+            for (let i = 0; i < particleCount; i++) {
+                const start = startPositions[i];
+                const target = targetPositions[i];
+                const drift = driftOffsets[i];
+                const offset = currentOffsets[i];
+
+                // Update drift
+                drift.x += drift.speedX * driftActive * CONFIG.DRIFT_AMOUNT;
+                drift.y += drift.speedY * driftActive * CONFIG.DRIFT_AMOUNT;
+                drift.z += drift.speedZ * driftActive * CONFIG.DRIFT_AMOUNT;
+
+                // Morph from start to target position
+                let x = mix(start.x, target.x, morphProgress);
+                let y = mix(start.y, target.y, morphProgress);
+                let z = mix(start.z, target.z, morphProgress);
+
+                // Add drift offset
+                x += drift.x * driftActive;
+                y += drift.y * driftActive;
+                z += drift.z * driftActive;
+
+                // Add mouse repulsion offset
+                x += offset.x;
+                y += offset.y;
+                z += offset.z;
+
+                // Apply spring overshoot effect when near target
+                if (morphProgress > 0.7 && !CONFIG.USE_REDUCED_MOTION) {
+                    const overshoot = easeOutElastic(morphProgress);
+                    x = mix(start.x, target.x, overshoot) + offset.x;
+                    y = mix(start.y, target.y, overshoot) + offset.y;
+                }
+
+                // Update instance matrix
+                dummy.position.set(x, y, z);
+
+                // Scale based on Act 3 progress (fade out)
+                const scale = mix(1.0, 0.3, tC);
+                dummy.scale.set(scale, scale, scale);
+
+                dummy.updateMatrix();
+                particlesMesh.setMatrixAt(i, dummy.matrix);
+
+                // Gradually decay offsets
+                offset.x *= 0.95;
+                offset.y *= 0.95;
+                offset.z *= 0.95;
+            }
+
+            particlesMesh.instanceMatrix.needsUpdate = true;
+
+            // Update material opacity
+            const opacity = mix(0.8, 0.2, tC);
+            particlesMesh.material.opacity = opacity;
+        }
+
+        /**
+         * Apply mouse repulsion effect to nearby particles
+         */
+        function applyMouseRepulsion() {
+            if (!particlesMesh || CONFIG.USE_REDUCED_MOTION) return;
+
+            const particleCount = startPositions.length;
+            const radius = CONFIG.MOUSE_REPULSION_RADIUS;
+            const strength = CONFIG.MOUSE_REPULSION_STRENGTH;
+
+            for (let i = 0; i < particleCount; i++) {
+                const start = startPositions[i];
+                const target = targetPositions[i];
+                const morphProgress = smoothstep(CONFIG.ACT2_START, CONFIG.ACT2_END, scrollProgress);
+
+                // Current position (interpolated)
+                const currentX = mix(start.x, target.x, morphProgress);
+                const currentY = mix(start.y, target.y, morphProgress);
+                const currentZ = mix(start.z, target.z, morphProgress);
+
+                // Distance to mouse
+                const dx = currentX - mouse3D.x;
+                const dy = currentY - mouse3D.y;
+                const dz = currentZ - mouse3D.z;
+                const distSq = dx * dx + dy * dy + dz * dz;
+                const dist = Math.sqrt(distSq);
+
+                if (dist < radius && dist > 0.01) {
+                    // Calculate repulsion
+                    const falloff = 1 - (dist / radius);
+                    const force = falloff * falloff * strength;
+
+                    currentOffsets[i].x += (dx / dist) * force;
+                    currentOffsets[i].y += (dy / dist) * force;
+                    currentOffsets[i].z += (dz / dist) * force;
+                }
+            }
+        }
+
+        /* ========================================
+           SCROLL HANDLING
+        ======================================== */
+
+        /**
+         * Update scroll progress and related UI
+         */
+        function updateScrollProgress() {
+            const scrollY = window.scrollY || window.pageYOffset;
+            const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+
+            // Calculate normalized scroll progress [0, 1]
+            scrollProgress = clamp(scrollY / maxScroll, 0, 1);
+
+            // Hide scroll indicator after initial scroll
+            const indicator = document.getElementById('scrollIndicator');
+            if (scrollProgress > 0.1) {
+                indicator.classList.add('hidden');
+            } else {
+                indicator.classList.remove('hidden');
+            }
+
+            // Show content section in Act 3
+            const contentSection = document.querySelector('.content-section');
+            const tC = smoothstep(CONFIG.ACT3_START, CONFIG.ACT3_END, scrollProgress);
+            if (tC > 0.3) {
+                contentSection.classList.add('visible');
+            } else {
+                contentSection.classList.remove('visible');
+            }
+        }
+
+        /* ========================================
+           CAMERA
+        ======================================== */
+
+        /**
+         * Update camera position based on scroll
+         */
+        function updateCamera() {
+            const tB = smoothstep(CONFIG.ACT2_START, CONFIG.ACT2_END, scrollProgress);
+
+            // Zoom out during Act 2
+            const targetZ = mix(CONFIG.CAMERA_START_Z, CONFIG.CAMERA_END_Z, tB);
+            camera.position.z = targetZ;
+        }
+
+        /* ========================================
+           MOUSE TRACKING
+        ======================================== */
+
+        /**
+         * Update mouse position in NDC and 3D space
+         */
+        function onMouseMove(event) {
+            // Normalize to [-1, 1]
+            mouseNDC.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseNDC.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            // Convert to 3D space at camera depth
+            mouse3D.set(
+                mouseNDC.x * (camera.position.z * Math.tan(THREE.MathUtils.degToRad(CONFIG.CAMERA_FOV / 2)) * camera.aspect),
+                mouseNDC.y * (camera.position.z * Math.tan(THREE.MathUtils.degToRad(CONFIG.CAMERA_FOV / 2))),
+                0
+            );
+        }
+
+        /* ========================================
+           RESIZE HANDLING
+        ======================================== */
+
+        /**
+         * Handle window resize
+         */
+        function onResize() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(width, height);
+        }
+
+        /* ========================================
+           ANIMATION LOOP
+        ======================================== */
+
+        let lastTime = 0;
+
+        /**
+         * Main animation loop
+         */
+        function animate(currentTime) {
+            requestAnimationFrame(animate);
+
+            const deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+
+            // Update based on scroll
+            updateCamera();
+            updateParticles(deltaTime);
+            applyMouseRepulsion();
+
+            // Render
+            renderer.render(scene, camera);
+        }
+
+        /* ========================================
+           INITIALIZATION
+        ======================================== */
+
+        /**
+         * Initialize Three.js scene
+         */
+        function initScene() {
+            // Get canvas element
+            const canvas = document.getElementById('hero-canvas');
+
+            // Create scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(CONFIG.BACKGROUND_COLOR);
+
+            // Create camera
+            camera = new THREE.PerspectiveCamera(
+                CONFIG.CAMERA_FOV,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(0, 0, CONFIG.CAMERA_START_Z);
+
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({
+                canvas: canvas,
+                antialias: true,
+                alpha: false
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Add subtle ambient light
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+
+            // Create particles
+            createParticles();
+
+            console.log('Scene initialized');
+        }
+
+        /* ========================================
+           EVENT LISTENERS
+        ======================================== */
+
+        function setupEventListeners() {
+            // Scroll
+            window.addEventListener('scroll', updateScrollProgress, { passive: true });
+
+            // Mouse move
+            window.addEventListener('mousemove', onMouseMove, { passive: true });
+
+            // Resize
+            window.addEventListener('resize', onResize, { passive: true });
+
+            // Initial scroll update
+            updateScrollProgress();
+        }
+
+        /* ========================================
+           ENTRY POINT
+        ======================================== */
+
+        /**
+         * Initialize when DOM is ready
+         */
+        function init() {
+            console.log('Initializing Three.js scroll hero...');
+            console.log('Configuration:', CONFIG);
+
+            initScene();
+            setupEventListeners();
+            animate(0);
+
+            console.log('Animation started');
+        }
+
+        // Wait for DOM and Three.js to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
