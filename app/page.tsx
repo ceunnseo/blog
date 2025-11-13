@@ -31,12 +31,10 @@ export default function Home() {
             스크롤을 통해 여정을 함께해주셔서 감사합니다.
           </p>
         </div>
-      </main>
 
-      {/* Interactive Cube Section */}
-      <section className="relative z-20">
+        {/* Interactive Cube - fixed position on the right */}
         <InteractiveCube />
-      </section>
+      </main>
     </>
   );
 }

@@ -12,6 +12,10 @@ export default function InteractiveCube() {
   useEffect(() => {
     if (!canvasRef.current) return;
 
+    // Canvas 크기 설정
+    const width = 320;
+    const height = 320;
+
     // Scene 설정
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x1a1a1a);
@@ -19,7 +23,7 @@ export default function InteractiveCube() {
     // Camera 설정
     const camera = new THREE.PerspectiveCamera(
       75,
-      window.innerWidth / window.innerHeight,
+      width / height,
       0.1,
       1000
     );
@@ -30,7 +34,7 @@ export default function InteractiveCube() {
       canvas: canvasRef.current,
       antialias: true,
     });
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
     // 정육면체 생성
@@ -63,21 +67,28 @@ export default function InteractiveCube() {
       renderer.render(scene, camera);
     };
 
-    // 리사이즈 핸들러
-    const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    };
-
     // 클릭 핸들러
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
     const handleClick = (event: MouseEvent) => {
-      // 마우스 위치를 NDC(Normalized Device Coordinates)로 변환
-      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      // Canvas의 위치와 크기 가져오기
+      const canvas = canvasRef.current!;
+      const rect = canvas.getBoundingClientRect();
+
+      // 마우스가 canvas 영역 내에 있는지 확인
+      if (
+        event.clientX < rect.left ||
+        event.clientX > rect.right ||
+        event.clientY < rect.top ||
+        event.clientY > rect.bottom
+      ) {
+        return;
+      }
+
+      // Canvas 기준으로 마우스 위치를 NDC(Normalized Device Coordinates)로 변환
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
       // Raycasting
       raycaster.setFromCamera(mouse, camera);
@@ -105,7 +116,6 @@ export default function InteractiveCube() {
     };
 
     // 이벤트 리스너 등록
-    window.addEventListener('resize', handleResize);
     window.addEventListener('click', handleClick);
 
     // 애니메이션 시작
@@ -113,7 +123,6 @@ export default function InteractiveCube() {
 
     // Cleanup
     return () => {
-      window.removeEventListener('resize', handleResize);
       window.removeEventListener('click', handleClick);
       geometry.dispose();
       material.dispose();
@@ -122,7 +131,7 @@ export default function InteractiveCube() {
   }, []);
 
   return (
-    <div className="relative w-full h-screen">
+    <div className="fixed right-8 top-1/2 -translate-y-1/2 w-80 h-80 z-30">
       <canvas ref={canvasRef} className="w-full h-full" />
 
       {/* 말풍선 */}
@@ -145,9 +154,8 @@ export default function InteractiveCube() {
       )}
 
       {/* 안내 텍스트 */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white text-center">
-        <p className="text-lg font-medium mb-2">정육면체를 클릭해보세요!</p>
-        <p className="text-sm opacity-70">Click the cube to see a tooltip</p>
+      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 text-white text-center whitespace-nowrap">
+        <p className="text-xs opacity-70">클릭해보세요!</p>
       </div>
     </div>
   );
