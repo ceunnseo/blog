@@ -32,7 +32,7 @@ export function ToggleBlock({
       className="my-2 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
     >
       <CollapsibleTrigger
-        className="w-full flex items-center gap-2 p-3 font-medium hover:bg-lavender-50 dark:hover:bg-lavender-950/20 transition-colors group"
+        className="w-full flex items-center gap-2 p-3 font-medium hover:bg-lavender-800 dark:hover:bg-lavender-950/20 transition-colors group"
         aria-controls={`${block.id}-content`}
         aria-expanded={isOpen}
       >

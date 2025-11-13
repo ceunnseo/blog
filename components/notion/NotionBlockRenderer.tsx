@@ -9,7 +9,7 @@ export function NotionBlockRenderer({
   blocks: BlockWithChildren[];
 }) {
   return (
-    <div className="prose prose-lg prose-invert max-w-none">
+    <div className="prose text-white prose-invert max-w-none">
       {renderBlocks(blocks)}
     </div>
   );
