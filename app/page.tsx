@@ -1,4 +1,5 @@
 import ThreeHero from "@/components/ThreeHero";
+import InteractiveCube from "@/components/InteractiveCube";
 
 export default function Home() {
   return (
@@ -31,6 +32,11 @@ export default function Home() {
           </p>
         </div>
       </main>
+
+      {/* Interactive Cube Section */}
+      <section className="relative z-20">
+        <InteractiveCube />
+      </section>
     </>
   );
 }
