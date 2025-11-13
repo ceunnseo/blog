@@ -33,16 +33,25 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black`}
       >
         {/* Navigation matching index.html style */}
-        <nav className="fixed top-0 left-0 right-0 px-12 py-6 flex justify-between items-center z-10 pointer-events-none">
-          <div className="text-white font-medium text-base pointer-events-auto">
-            CEUNNSEO
+        <nav
+          className="fixed top-0 left-0 right-0 px-12 py-6 
+            flex justify-between items-center z-50 pointer-events-none
+            bg-black/60 backdrop-blur-md"
+        >
+          <div className="pointer-events-auto">
+            <Link
+              href="/"
+              className="text-white font-medium text-base hover:text-lavender-400 cursor-pointer transition-colors no-underline"
+            >
+              CEUNNSEO
+            </Link>
           </div>
           <div>
             <Link
               href="/articles"
-              className="text-white text-sm font-light tracking-wide pointer-events-auto opacity-80 hover:opacity-100 transition-opacity no-underline"
+              className="text-white text-sm font-light tracking-wide pointer-events-auto hover:text-lavender-400 cursor-pointer transition-colors no-underline"
             >
-              About
+              Articles
             </Link>
           </div>
         </nav>
