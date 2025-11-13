@@ -131,7 +131,7 @@ export default function InteractiveCube() {
   }, []);
 
   return (
-    <div className="fixed right-8 top-1/2 -translate-y-1/2 w-80 h-80 z-30">
+    <div className="fixed left-8 bottom-8 w-80 h-80 z-30">
       <canvas ref={canvasRef} className="w-full h-full" />
 
       {/* 말풍선 */}
